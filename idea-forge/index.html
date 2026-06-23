@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IdeaForge - Trình Tạo Ý Tưởng & Gamified Brainstorming</title>
+  <!-- Google Fonts: Orbitron & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Cyberpunk Background Glows -->
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+  <div class="bg-glow bg-glow-3"></div>
+
+  <div id="app-container">
+    <!-- Navigation Bar -->
+    <header class="navbar">
+      <div class="logo">
+        <span class="logo-icon">⚡</span>
+        <span class="logo-text">IDEA<span class="highlight">FORGE</span></span>
+      </div>
+      <nav class="nav-links">
+        <button class="nav-btn active" data-target="screen-dashboard">DASHBOARD</button>
+        <button class="nav-btn" data-target="screen-mixer">BỘ TRỘN LÒ PHẢN ỨNG</button>
+        <button class="nav-btn" data-target="screen-marathon">MINDMAP MARATHON</button>
+        <button class="nav-btn" data-target="screen-board">XƯỞNG Ý TƯỞNG</button>
+      </nav>
+      <div class="system-status">
+        <span class="status-pulse"></span>
+        <span class="status-text">FORGE ONLINE</span>
+      </div>
+    </header>
+
+    <!-- Main Screens Container -->
+    <main id="main-content">
+      
+      <!-- SCREEN 1: DASHBOARD -->
+      <section id="screen-dashboard" class="screen active">
+        <div class="hero-section">
+          <h1 class="hero-title">ĐÚC Ý TƯỞNG GAME <br><span class="gradient-text">BỨT PHÁ GIỚI HẠN</span></h1>
+          <p class="hero-subtitle">Chào mừng tới IdeaForge. Trình hóa game (gamify) quy trình lên ý tưởng của bạn. Quay xúc xắc thể loại, chạy Marathon đấu trí 2D Mindmap, hoặc thu thập những ý tưởng game điên rồ nhất.</p>
+        </div>
+
+        <div class="dashboard-grid">
+          <!-- Card Mode 1: Mixer -->
+          <div class="mode-card card-mixer" onclick="switchScreen('screen-mixer')">
+            <div class="mode-icon">🌀</div>
+            <h2 class="mode-title">Bộ Trộn Lò Phản Ứng</h2>
+            <p class="mode-desc">Quay ngẫu nhiên Thể loại, Chủ đề, Cơ chế và Ràng buộc. Khóa các thành phần và đúc kết thành ý tưởng mới.</p>
+            <div class="mode-action">KHỞI ĐỘNG LÒ PHẢN ỨNG →</div>
+          </div>
+
+          <!-- Card Mode 2: Marathon -->
+          <div class="mode-card card-marathon" onclick="switchScreen('screen-marathon')">
+            <div class="mode-icon">⏱️</div>
+            <h2 class="mode-title">Mindmap Marathon</h2>
+            <p class="mode-desc">Chế độ Time Attack! Gõ liên tục các cơ chế/ý tưởng liên kết trong thời gian giới hạn để tạo sơ đồ tư duy Canvas 2D động.</p>
+            <div class="mode-action">BẮT ĐẦU ĐẤU TRÍ →</div>
+          </div>
+
+          <!-- Card Mode 3: Board -->
+          <div class="mode-card card-board" onclick="switchScreen('screen-board')">
+            <div class="mode-icon">🗂️</div>
+            <h2 class="mode-title">Xưởng Ý Tưởng</h2>
+            <p class="mode-desc">Quản lý kho tàng ý tưởng game của bạn. Thêm ghi chú, gắn thẻ phân loại và xuất dữ liệu sang Markdown/JSON.</p>
+            <div class="mode-action">MỞ BẢNG Ý TƯỞNG →</div>
+          </div>
+        </div>
+
+        <!-- Quick Stats & Tips -->
+        <div class="dashboard-footer">
+          <div class="stats-panel glass-panel">
+            <h3>THỐNG KÊ HỆ THỐNG</h3>
+            <div class="stats-row">
+              <div class="stat-item">
+                <span class="stat-num" id="stat-total-ideas">0</span>
+                <span class="stat-label">Ý tưởng đã lưu</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-num" id="stat-high-score">0</span>
+                <span class="stat-label">Điểm Marathon cao nhất</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-num" id="stat-rank">TẬP SỰ</span>
+                <span class="stat-label">Danh hiệu Sáng tạo</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="tips-panel glass-panel">
+            <h3>MẸO BRAINSTORM</h3>
+            <p id="dashboard-tip">"Đừng tự kiểm duyệt ý tưởng trong lúc quay. Những ý tưởng nghe điên rồ nhất lúc đầu thường lại là cốt lõi của những game thành công nhất!"</p>
+            <button class="btn-secondary" id="next-tip-btn">Mẹo tiếp theo</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- SCREEN 2: IDEA MIXER -->
+      <section id="screen-mixer" class="screen">
+        <div class="screen-header">
+          <h2>BỘ TRỘN LÒ PHẢN ỨNG <span class="highlight">(REACTOR MIXER)</span></h2>
+          <p>Kéo cần gạt để khởi động lò phản ứng hạt nhân ý tưởng. Khóa các khe bạn thích để đúc nên kiệt tác game.</p>
+        </div>
+
+        <div class="mixer-layout">
+          <!-- Left: The Slot Machine Reactor -->
+          <div class="reactor-container glass-panel">
+            <div class="reactor-core">
+              <div class="reactor-header-row">
+                <div class="reactor-status">CORE TEMP: <span id="reactor-temp">35°C</span></div>
+                <div class="reactor-light" id="reactor-indicator"></div>
+              </div>
+              
+              <!-- Slots Rows -->
+              <div class="slots-wrapper">
+                <!-- Slot 1: Genre -->
+                <div class="slot-column" id="slot-genre">
+                  <span class="slot-label">THỂ LOẠI</span>
+                  <div class="slot-window">
+                    <div class="slot-strip" id="strip-genre">
+                      <div class="slot-item">Nhập vai (RPG)</div>
+                    </div>
+                  </div>
+                  <button class="lock-btn" id="lock-genre" title="Khóa thể loại">🔓</button>
+                </div>
+
+                <!-- Slot 2: Theme -->
+                <div class="slot-column" id="slot-theme">
+                  <span class="slot-label">CHỦ ĐỀ</span>
+                  <div class="slot-window">
+                    <div class="slot-strip" id="strip-theme">
+                      <div class="slot-item">Không gian sâu</div>
+                    </div>
+                  </div>
+                  <button class="lock-btn" id="lock-theme" title="Khóa chủ đề">🔓</button>
+                </div>
+
+                <!-- Slot 3: Mechanic -->
+                <div class="slot-column" id="slot-mechanic">
+                  <span class="slot-label">CƠ CHẾ</span>
+                  <div class="slot-window">
+                    <div class="slot-strip" id="strip-mechanic">
+                      <div class="slot-item">Rút bài/Thẻ</div>
+                    </div>
+                  </div>
+                  <button class="lock-btn" id="lock-mechanic" title="Khóa cơ chế">🔓</button>
+                </div>
+
+                <!-- Slot 4: Constraint -->
+                <div class="slot-column" id="slot-constraint">
+                  <span class="slot-label">RÀNG BUỘC</span>
+                  <div class="slot-window">
+                    <div class="slot-strip" id="strip-constraint">
+                      <div class="slot-item">Chỉ có 1 HP</div>
+                    </div>
+                  </div>
+                  <button class="lock-btn" id="lock-constraint" title="Khóa ràng buộc">🔓</button>
+                </div>
+
+                <!-- Slot 5: Art Style -->
+                <div class="slot-column" id="slot-style">
+                  <span class="slot-label">PHONG CÁCH</span>
+                  <div class="slot-window">
+                    <div class="slot-strip" id="strip-style">
+                      <div class="slot-item">Pixel Art 8-bit</div>
+                    </div>
+                  </div>
+                  <button class="lock-btn" id="lock-style" title="Khóa phong cách">🔓</button>
+                </div>
+              </div>
+
+              <!-- Spin Lever & Action buttons -->
+              <div class="reactor-controls">
+                <button class="btn-secondary" id="btn-unlock-all">MỞ KHÓA TẤT CẢ</button>
+                <button class="btn-primary btn-large btn-glow" id="btn-spin">KÍCH HOẠT LÒ PHẢN ỨNG</button>
+                <button class="btn-secondary" id="btn-wildcard">+ THÊM THỬ THÁCH</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: The Forging Station -->
+          <div class="forge-station glass-panel">
+            <h3 class="panel-title">TÀI LIỆU THIẾT KẾ Ý TƯỞNG</h3>
+            
+            <div class="idea-card-preview" id="idea-card-result">
+              <div class="card-pulse-glow"></div>
+              <div class="idea-card-inner">
+                <div class="card-tag" id="preview-tag-display">Ý TƯỞNG ĐÚC</div>
+                <h4 id="preview-title">Tên Game Chưa Đặt</h4>
+                <div class="preview-components">
+                  <div class="comp-row"><strong>Thể loại:</strong> <span id="comp-genre">-</span></div>
+                  <div class="comp-row"><strong>Chủ đề:</strong> <span id="comp-theme">-</span></div>
+                  <div class="comp-row"><strong>Cơ chế:</strong> <span id="comp-mechanic">-</span></div>
+                  <div class="comp-row"><strong>Ràng buộc:</strong> <span id="comp-constraint">-</span></div>
+                  <div class="comp-row"><strong>Mỹ thuật:</strong> <span id="comp-style">-</span></div>
+                  <div class="comp-row" id="wildcard-row" style="display: none;"><strong>Biến số phụ:</strong> <span id="comp-wildcard" class="text-warning">-</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Notes and Editing Area -->
+            <div class="forge-editor">
+              <div class="form-group">
+                <label for="forge-title">Đặt Tên Dự Án</label>
+                <input type="text" id="forge-title" placeholder="Ví dụ: Neon Knight, Lost Gravity..." maxlength="40">
+              </div>
+
+              <div class="form-group">
+                <label for="forge-notes">Mô Tả & Ghi Chú Cách Chơi (Gameplay details)</label>
+                <textarea id="forge-notes" placeholder="Mô tả cách game hoạt động, vòng lặp gameplay chính, hoặc cách kết hợp các yếu tố trên lại..." rows="5"></textarea>
+              </div>
+
+              <div class="form-group row-group">
+                <div class="sub-form-group">
+                  <label for="forge-tag">Phân Loại Thẻ</label>
+                  <select id="forge-tag">
+                    <option value="Game Jam">🎮 Game Jam</option>
+                    <option value="Dự án cá nhân">🚀 Dự án cá nhân</option>
+                    <option value="Hài hước/Giải trí">🤡 Hài hước/Vui vẻ</option>
+                    <option value="Khó nhằn/Hardcore">🔥 Hardcore</option>
+                    <option value="Ý tưởng cốt truyện">✍️ Cốt truyện/Bối cảnh</option>
+                  </select>
+                </div>
+                <div class="sub-form-group">
+                  <label for="forge-rating">Đánh Giá Tiềm Năng</label>
+                  <div class="star-rating" id="forge-rating">
+                    <span class="star" data-value="1">★</span>
+                    <span class="star" data-value="2">★</span>
+                    <span class="star" data-value="3">★</span>
+                    <span class="star" data-value="4">★</span>
+                    <span class="star" data-value="5">★</span>
+                  </div>
+                </div>
+              </div>
+
+              <button class="btn-primary btn-full" id="btn-save-idea">LƯU VÀO XƯỞNG Ý TƯỞNG</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SCREEN 3: MINDMAP MARATHON -->
+      <section id="screen-marathon" class="screen">
+        <div class="marathon-setup" id="marathon-setup-panel">
+          <div class="setup-container glass-panel">
+            <h2>MINDMAP MARATHON <span class="highlight">(TIME ATTACK)</span></h2>
+            <p>Trò chơi kích thích tư duy cực độ! Nhập một từ khóa cốt lõi, bắt đầu đồng hồ và gõ thật nhanh các từ khóa, cơ chế, hoặc ý tưởng liên quan để dệt nên Sơ đồ tư duy Canvas 2D động. Điểm số sẽ tăng dựa trên độ dài, tính độc đáo và chuỗi combo gõ chữ liên tục.</p>
+            
+            <div class="setup-form">
+              <div class="form-group">
+                <label>Chủ Đề Trung Tâm (Từ khóa gốc)</label>
+                <div class="keyword-preset-container">
+                  <input type="text" id="marathon-root-keyword" placeholder="Nhập từ khóa chủ đề (ví dụ: Trọng lực, Thời gian, Nước, Bóng tối...)" value="Trọng Lực">
+                  <button class="btn-secondary" id="btn-random-root" style="white-space: nowrap;">Ngẫu nhiên</button>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Giới Hạn Thời Gian</label>
+                <div class="time-presets">
+                  <button class="time-preset-btn active" data-time="60">60 Giây</button>
+                  <button class="time-preset-btn" data-time="90">90 Giây</button>
+                  <button class="time-preset-btn" data-time="120">120 Giây</button>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Độ Khó (Biến số bổ sung)</label>
+                <div class="difficulty-options">
+                  <label class="radio-label">
+                    <input type="radio" name="marathon-diff" value="easy" checked>
+                    <span>Dễ (Mỗi ý tưởng tự do)</span>
+                  </label>
+                  <label class="radio-label">
+                    <input type="radio" name="marathon-diff" value="hard">
+                    <span>Khó (Phải bắt đầu bằng chữ cái cuối của từ trước)</span>
+                  </label>
+                </div>
+              </div>
+
+              <button class="btn-primary btn-glow btn-large btn-full" id="btn-start-marathon">BẮT ĐẦU BRAINSTORM MARATHON</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="marathon-gameplay" id="marathon-game-panel" style="display: none;">
+          <!-- Left side: Controls and input -->
+          <div class="marathon-left-column">
+            <!-- Game HUD -->
+            <div class="marathon-hud glass-panel">
+              <div class="hud-item-wrapper">
+                <span class="hud-lbl">THỜI GIAN</span>
+                <span class="hud-val timer-val" id="marathon-timer">01:00</span>
+              </div>
+              <div class="hud-item-wrapper">
+                <span class="hud-lbl">ĐIỂM SỐ</span>
+                <span class="hud-val score-val" id="marathon-score">0000</span>
+              </div>
+              <div class="hud-item-wrapper">
+                <span class="hud-lbl">Ý TƯỞNG</span>
+                <span class="hud-val count-val" id="marathon-count">0</span>
+              </div>
+              <div class="hud-item-wrapper">
+                <span class="hud-lbl">COMBO</span>
+                <div class="combo-container">
+                  <span class="hud-val combo-val" id="marathon-combo">x1</span>
+                  <div class="combo-bar-outer"><div class="combo-bar-inner" id="marathon-combo-bar"></div></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Input area -->
+            <div class="marathon-input-panel glass-panel">
+              <div class="marathon-prompt">
+                Chủ đề hiện tại: <span class="highlight-root" id="current-marathon-theme">TRỌNG LỰC</span>
+              </div>
+              
+              <div class="rule-hint" id="marathon-rule-hint">Hãy gõ bất cứ ý tưởng nào xuất hiện trong đầu bạn liên quan đến chủ đề này!</div>
+
+              <form id="marathon-input-form" onsubmit="event.preventDefault();">
+                <input type="text" id="marathon-input-field" placeholder="Gõ ý tưởng tại đây rồi ấn Enter..." autocomplete="off">
+                <button type="submit" class="btn-primary" id="btn-submit-idea">GỬI</button>
+              </form>
+
+              <!-- Feed of recent entries -->
+              <div class="entries-log-container">
+                <h4>NHẬT KÝ Ý TƯỞNG VỪA GÕ:</h4>
+                <ul class="entries-log" id="marathon-entries-log">
+                  <li class="system-entry">Nhập từ khóa của bạn để tạo ra hệ sinh thái ý tưởng...</li>
+                </ul>
+              </div>
+            </div>
+
+            <button class="btn-secondary btn-full" id="btn-abort-marathon">DỪNG TRẬN ĐẤU (THOÁT)</button>
+          </div>
+
+          <!-- Right side: Canvas Mindmap -->
+          <div class="marathon-right-column glass-panel">
+            <div class="canvas-header">
+              <span>SƠ ĐỒ TƯ DUY 2D DỰNG ĐỘNG (INTERACTIVE BRAIN GRAPH)</span>
+              <button class="btn-icon" id="btn-recenter-canvas" title="Căn giữa sơ đồ">🎯</button>
+            </div>
+            <div class="canvas-container">
+              <canvas id="mindmap-canvas"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div class="marathon-result" id="marathon-result-panel" style="display: none;">
+          <div class="result-container glass-panel">
+            <div class="trophy-icon">🏆</div>
+            <h2>KẾT QUẢ BRAINSTORM MARATHON</h2>
+            <div class="result-rank" id="result-rank-title">BRAIN STORMER</div>
+            
+            <div class="result-stats">
+              <div class="res-stat-card">
+                <span class="res-lbl">TỔNG ĐIỂM</span>
+                <span class="res-val highlight" id="res-score">0</span>
+              </div>
+              <div class="res-stat-card">
+                <span class="res-lbl">Ý TƯỞNG GÕ ĐƯỢC</span>
+                <span class="res-val" id="res-ideas-count">0</span>
+              </div>
+              <div class="res-stat-card">
+                <span class="res-lbl">CỰC ĐẠI COMBO</span>
+                <span class="res-val" id="res-max-combo">x1</span>
+              </div>
+            </div>
+
+            <!-- List of words created -->
+            <div class="result-words-list">
+              <h3>BẢN ĐỒ KHÁI NIỆM BẠN ĐÃ TẠO:</h3>
+              <div class="words-container" id="res-words-cloud">
+                <!-- Spanned words -->
+              </div>
+            </div>
+
+            <div class="result-actions">
+              <button class="btn-primary" id="btn-save-marathon-idea">LƯU CỐT LÕI NÀY LÊN BẢNG Ý TƯỞNG</button>
+              <button class="btn-secondary" id="btn-marathon-retry">LÊN Ý TƯỞNG CHỦ ĐỀ KHÁC</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SCREEN 4: IDEA BOARD (WORKSHOP) -->
+      <section id="screen-board" class="screen">
+        <div class="board-header-row">
+          <div class="screen-header">
+            <h2>XƯỞNG Ý TƯỞNG <span class="highlight">(IDEA WORKSHOP)</span></h2>
+            <p>Nơi lưu trữ, chỉnh sửa, chọn lọc và xuất bản các ý tưởng game của bạn.</p>
+          </div>
+          <div class="board-global-actions">
+            <button class="btn-secondary" id="btn-export-json">XUẤT FILE JSON</button>
+            <button class="btn-secondary" id="btn-export-markdown">XUẤT FILE MARKDOWN</button>
+            <button class="btn-primary" id="btn-create-manual-idea">+ TẠO Ý TƯỞNG THỦ CÔNG</button>
+          </div>
+        </div>
+
+        <div class="board-layout">
+          <!-- Left: Filter Sidebar -->
+          <div class="board-sidebar glass-panel">
+            <div class="search-box">
+              <input type="text" id="board-search" placeholder="Tìm kiếm ý tưởng...">
+            </div>
+            
+            <div class="filter-group">
+              <h4>LỌC THEO PHÂN LOẠI</h4>
+              <div class="filter-tags" id="board-filter-tags">
+                <button class="tag-filter-btn active" data-tag="all">Tất cả</button>
+                <button class="tag-filter-btn" data-tag="Game Jam">🎮 Game Jam</button>
+                <button class="tag-filter-btn" data-tag="Dự án cá nhân">🚀 Dự án</button>
+                <button class="tag-filter-btn" data-tag="Hài hước/Giải trí">🤡 Vui vẻ</button>
+                <button class="tag-filter-btn" data-tag="Khó nhằn/Hardcore">🔥 Hardcore</button>
+                <button class="tag-filter-btn" data-tag="Ý tưởng cốt truyện">✍️ Cốt truyện</button>
+              </div>
+            </div>
+
+            <div class="filter-group">
+              <h4>SẮP XẾP THEO</h4>
+              <select id="board-sort-by">
+                <option value="newest">Mới nhất trước</option>
+                <option value="oldest">Cũ nhất trước</option>
+                <option value="rating">Độ khả thi cao nhất</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Right: Grid of cards -->
+          <div class="board-grid-container">
+            <div class="board-grid" id="ideas-grid">
+              <!-- Cards rendered dynamically -->
+              <div class="no-ideas-message">
+                <div class="alert-icon">⚡</div>
+                <h3>Chưa có ý tưởng nào trong xưởng!</h3>
+                <p>Hãy sang <strong>Bộ Trộn Lò Phản Ứng</strong> quay slot hoặc <strong>Marathon</strong> để đúc nên các ý tưởng độc đáo đầu tiên.</p>
+                <button class="btn-primary" onclick="switchScreen('screen-mixer')">ĐẾN BỘ TRỘN NGAY</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Manual Idea Creation Overlay Modal -->
+  <div class="modal-overlay" id="manual-idea-modal">
+    <div class="modal-content glass-panel">
+      <div class="modal-header">
+        <h3>TẠO Ý TƯỞNG GAME THỦ CÔNG</h3>
+        <button class="close-modal-btn" id="btn-close-modal">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="manual-title">Tên Ý Tưởng Game</label>
+          <input type="text" id="manual-title" placeholder="Nhập tên dự án..." required>
+        </div>
+        <div class="form-group row-group">
+          <div class="sub-form-group">
+            <label for="manual-genre">Thể loại</label>
+            <input type="text" id="manual-genre" placeholder="RPG, Platformer, Roguelike...">
+          </div>
+          <div class="sub-form-group">
+            <label for="manual-theme">Chủ đề</label>
+            <input type="text" id="manual-theme" placeholder="Không gian, trung cổ, cyberpunk...">
+          </div>
+        </div>
+        <div class="form-group row-group">
+          <div class="sub-form-group">
+            <label for="manual-mechanics">Cơ chế gameplay</label>
+            <input type="text" id="manual-mechanics" placeholder="Xây căn cứ, kéo thả...">
+          </div>
+          <div class="sub-form-group">
+            <label for="manual-style">Phong cách mỹ thuật</label>
+            <input type="text" id="manual-style" placeholder="Pixel 8-bit, 3D Realistic...">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="manual-notes">Mô tả chi tiết ý tưởng</label>
+          <textarea id="manual-notes" rows="6" placeholder="Ghi chép bất cứ dòng suy nghĩ nào của bạn về dự án này..."></textarea>
+        </div>
+        <div class="form-group row-group">
+          <div class="sub-form-group">
+            <label for="manual-tag">Nhãn phân loại</label>
+            <select id="manual-tag">
+              <option value="Game Jam">🎮 Game Jam</option>
+              <option value="Dự án cá nhân">🚀 Dự án cá nhân</option>
+              <option value="Hài hước/Giải trí">🤡 Hài hước/Vui vẻ</option>
+              <option value="Khó nhằn/Hardcore">🔥 Hardcore</option>
+              <option value="Ý tưởng cốt truyện">✍️ Cốt truyện/Bối cảnh</option>
+            </select>
+          </div>
+          <div class="sub-form-group">
+            <label for="manual-rating">Độ khả thi (1-5 sao)</label>
+            <input type="number" id="manual-rating" min="1" max="5" value="3" style="width: 100%; padding: 0.7rem; border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(10,10,25,0.8); color: #fff;">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-cancel-modal">HỦY BỎ</button>
+        <button class="btn-primary" id="btn-save-manual">LƯU Ý TƯỞNG</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Javascript Modules -->
+  <script src="js/audio.js"></script>
+  <script src="js/generator.js"></script>
+  <script src="js/mindmap.js"></script>
+  <script src="js/board.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
