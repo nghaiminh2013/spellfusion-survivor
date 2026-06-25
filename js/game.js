@@ -271,8 +271,18 @@ function initGame() {
   gameCtx.lastCaveEntranceX = 0;
   gameCtx.lastCaveEntranceY = 0;
 
-  // Spawn 3 Cave Entrances in the main map with index assignment
+  // Spawn 3 Cave Entrances in the main map with index assignment (40% chance each, guaranteed at least 1)
+  let spawnedIndices = [];
   for (let i = 0; i < 3; i++) {
+    if (Math.random() < 0.4) {
+      spawnedIndices.push(i);
+    }
+  }
+  if (spawnedIndices.length === 0) {
+    spawnedIndices.push(Math.floor(Math.random() * 3));
+  }
+
+  spawnedIndices.forEach(i => {
     let cx, cy;
     let tooClose = true;
     while (tooClose) {
@@ -295,12 +305,15 @@ function initGame() {
     const ent = new CaveEntrance(cx, cy);
     ent.caveIndex = i; // 0, 1, 2
     gameCtx.caveEntrances.push(ent);
-  }
+  });
 
-  // Spawn 3 Cave Exits, each returning to its corresponding Entrance on the main map
-  gameCtx.caveExits.push(new CaveExit(5500, 5500, gameCtx.caveEntrances[0].x, gameCtx.caveEntrances[0].y));
-  gameCtx.caveExits.push(new CaveExit(7000, 5500, gameCtx.caveEntrances[1].x, gameCtx.caveEntrances[1].y));
-  gameCtx.caveExits.push(new CaveExit(8500, 5500, gameCtx.caveEntrances[2].x, gameCtx.caveEntrances[2].y));
+  // Spawn 3 Cave Exits safely
+  for (let i = 0; i < 3; i++) {
+    const entrance = gameCtx.caveEntrances.find(ent => ent.caveIndex === i);
+    const rx = entrance ? entrance.x : ARENA_WIDTH / 2;
+    const ry = entrance ? entrance.y : ARENA_HEIGHT / 2;
+    gameCtx.caveExits.push(new CaveExit(5500 + i * 1500, 5500, rx, ry));
+  }
 
   // Spawn Minerals for each cave
   // Cave 0 (X: 5000-6000) - Quartz Stone Cave: Mostly Stone
@@ -308,7 +321,8 @@ function initGame() {
     const ox = 5120 + Math.random() * 760;
     const oy = 5120 + Math.random() * 760;
     if (Math.hypot(ox - 5500, oy - 5500) > 90) {
-      const type = Math.random() < 0.85 ? 'ore_stone' : 'ore_iron';
+      const r = Math.random();
+      const type = r < 0.65 ? 'ore_stone' : r < 0.90 ? 'ore_iron' : r < 0.98 ? 'ore_gold' : 'ore_diamond';
       gameCtx.obstacles.push(new Obstacle(ox, oy, type));
     }
   }
@@ -318,7 +332,8 @@ function initGame() {
     const ox = 6620 + Math.random() * 760;
     const oy = 5120 + Math.random() * 760;
     if (Math.hypot(ox - 7000, oy - 5500) > 90) {
-      const type = Math.random() < 0.85 ? 'ore_iron' : 'ore_stone';
+      const r = Math.random();
+      const type = r < 0.25 ? 'ore_stone' : r < 0.75 ? 'ore_iron' : r < 0.93 ? 'ore_gold' : 'ore_diamond';
       gameCtx.obstacles.push(new Obstacle(ox, oy, type));
     }
   }
@@ -328,7 +343,8 @@ function initGame() {
     const ox = 8120 + Math.random() * 760;
     const oy = 5120 + Math.random() * 760;
     if (Math.hypot(ox - 8500, oy - 5500) > 90) {
-      const type = Math.random() < 0.5 ? 'ore_stone' : 'ore_iron';
+      const r = Math.random();
+      const type = r < 0.10 ? 'ore_stone' : r < 0.30 ? 'ore_iron' : r < 0.75 ? 'ore_gold' : 'ore_diamond';
       const ore = new Obstacle(ox, oy, type);
       ore.maxHp *= 2;
       ore.hp = ore.maxHp;
@@ -584,13 +600,13 @@ function enterLobby() {
     if (el) el.classList.remove('active');
   });
 
-  // Show gameplay HUD elements in lobby
+  // Hide gameplay HUD elements in lobby
   const hudEl = document.getElementById('hud');
-  if (hudEl) hudEl.style.display = '';
+  if (hudEl) hudEl.style.display = 'none';
   const minimapEl = document.getElementById('minimap-container');
-  if (minimapEl) minimapEl.style.display = '';
+  if (minimapEl) minimapEl.style.display = 'none';
   const sidebarEl = document.getElementById('cooldown-sidebar');
-  if (sidebarEl) sidebarEl.style.display = '';
+  if (sidebarEl) sidebarEl.style.display = 'none';
   const craftEl = document.getElementById('crafting-overlay');
   if (craftEl) craftEl.style.display = 'none';
 
@@ -994,6 +1010,7 @@ const _origDraw = typeof draw === 'function' ? draw : null;
 // SPAWNER & WAVE SYSTEM (TẠO QUÁI & ĐỢT CHƠI)
 // ==========================================
 function handleSpawning() {
+  if (gameCtx.inCave) return; // Đóng băng thời gian và ngưng đợt quái chính trong hang động
   if (gameCtx.waveState === 'BREAK') {
     const autoSkip = document.getElementById('auto-skip-checkbox') && document.getElementById('auto-skip-checkbox').checked;
     if (autoSkip) {
@@ -1202,6 +1219,15 @@ function updateCollisions() {
           
           // Quái vật cắn phá công trình (sát thương chia đều cho 60 FPS)
           obs.takeDamage(e.damage / 60);
+
+          // Phản sát thương lôi điện cho rào điện
+          if (obs.type === 'electric_fence') {
+            e.takeDamage((e.damage * 0.5) / 60); // phản 50% sát thương quái
+            e.applyEffect('shock', 30); // giật tê liệt nhẹ nửa giây
+            if (Math.random() < 0.1) {
+              particleManager.addParticle(e.x, e.y, '#00ffff', 1, 1, Math.random() * Math.PI * 2, 0.1);
+            }
+          }
         }
       }
     }
@@ -1226,11 +1252,31 @@ function updateCollisions() {
   if (gameCtx.obstacles && gameCtx.player) {
     for (const obs of gameCtx.obstacles) {
       if (!obs.active || !obs.solid) continue;
+      
       const pdx = gameCtx.player.x - obs.x;
       const pdy = gameCtx.player.y - obs.y;
       const pdist = Math.hypot(pdx, pdy);
+      
+      if (obs.isCrafted) {
+        // Tạo hiệu ứng hạt lấp lánh nhẹ cùng tông màu công trình khi người chơi đi xuyên qua
+        if (pdist < gameCtx.player.size + obs.size) {
+          if (Math.random() < 0.12) {
+            particleManager.addParticle(
+              gameCtx.player.x + (Math.random() * 12 - 6),
+              gameCtx.player.y + (Math.random() * 12 - 6),
+              obs.color,
+              1.2,
+              1.2,
+              Math.random() * Math.PI * 2,
+              0.08
+            );
+          }
+        }
+        continue;
+      }
+      
       if (pdist < gameCtx.player.size + obs.size) {
-        // Đẩy người chơi ra ngoài công trình
+        // Đẩy người chơi ra ngoài công trình (đối với chướng ngại vật tự nhiên)
         const overlap = (gameCtx.player.size + obs.size) - pdist;
         const pushX = (pdx / pdist) * overlap;
         const pushY = (pdy / pdist) * overlap;
@@ -1284,6 +1330,31 @@ function update() {
   handleSpawning();
   gameCtx.player.update(keys, mouse, gameCtx.enemies, gameCtx.playerSpells);
 
+  // Cập nhật menu chế tạo theo thời gian thực nếu đang mở
+  if (gameCtx.gameTime % 5 === 0) {
+    const overlay = document.getElementById('crafting-overlay');
+    if (overlay && overlay.style.display === 'flex') {
+      if (typeof window.updateCraftingMenu === 'function') {
+        window.updateCraftingMenu();
+      }
+    }
+  }
+
+  // Power Drill tool effect: auto mine nearby ores
+  if (gameCtx.player.equippedTool === 'power_drill' && gameCtx.gameTime % 15 === 0 && gameCtx.obstacles) {
+    for (const obs of gameCtx.obstacles) {
+      if (!obs.active || !['ore_stone', 'ore_iron', 'ore_gold', 'ore_diamond'].includes(obs.type)) continue;
+      const dist = Math.hypot(gameCtx.player.x - obs.x, gameCtx.player.y - obs.y);
+      if (dist < 90) {
+        obs.takeDamage(60);
+        // Visual electric/drill effect
+        for (let j = 0; j < 4; j++) {
+          particleManager.addParticle(obs.x, obs.y, '#ffffff', 1.5, 2, Math.random() * Math.PI * 2, 0.1);
+        }
+      }
+    }
+  }
+
   if (gameCtx.player.hp <= 0) {
     endGame();
     return;
@@ -1295,8 +1366,7 @@ function update() {
   camY += (targetCamY - camY) * 0.1;
 
   if (gameCtx.inCave) {
-    camX = Math.max(5000, Math.min(6000 - canvas.width, camX));
-    camY = Math.max(5000, Math.min(6000 - canvas.height, camY));
+    // Không giới hạn camera trong hang động vô hạn
   } else {
     camX = Math.max(0, Math.min(ARENA_WIDTH - canvas.width, camX));
     camY = Math.max(0, Math.min(ARENA_HEIGHT - canvas.height, camY));
@@ -1312,7 +1382,7 @@ function update() {
     if (s.active && gameCtx.obstacles) {
       s.hitObstacles = s.hitObstacles || new Set();
       for (const obs of gameCtx.obstacles) {
-        if (!obs.active || (obs.type !== 'ore_stone' && obs.type !== 'ore_iron')) continue;
+        if (!obs.active || !['ore_stone', 'ore_iron', 'ore_gold', 'ore_diamond'].includes(obs.type)) continue;
         
         if (s.hitObstacles.has(obs)) continue;
         
@@ -1328,7 +1398,7 @@ function update() {
           obs.takeDamage(dmg);
           s.hitObstacles.add(obs);
           
-          const isPersistent = s.type.includes('patch') || s.type.includes('cloud') || s.type.includes('storm') || s.type.includes('shield') || s.type.includes('aura') || s.type.includes('wall');
+          const isPersistent = s.type.includes('patch') || s.type.includes('cloud') || s.type.includes('storm') || s.type.includes('shield') || s.type.includes('aura') || s.type.includes('wall') || s.speed === 0 || s.type === 'wolf_z' || s.type === 'wolf_v';
           if (!isPersistent) {
             s.active = false;
             break;
@@ -1346,7 +1416,7 @@ function update() {
   for (let i = gameCtx.enemyBullets.length - 1; i >= 0; i--) {
     const b = gameCtx.enemyBullets[i];
     b.update();
-    if (b.x < 0 || b.x > ARENA_WIDTH || b.y < 0 || b.y > ARENA_HEIGHT) {
+    if (Math.hypot(b.x - gameCtx.player.x, b.y - gameCtx.player.y) > 1000) {
       b.destroy3D();
       gameCtx.enemyBullets.splice(i, 1);
     }
@@ -1373,10 +1443,11 @@ function update() {
 
       if (Math.random() < dropChance) {
         const isBoss = e.type === 'boss';
+        const drillMult = gameCtx.player.equippedTool === 'power_drill' ? 2 : 1;
         if (isBoss) {
-          const wAmt = Math.floor(Math.random() * 4) + 6; // 6-9 gỗ
-          const sAmt = Math.floor(Math.random() * 4) + 6; // 6-9 đá
-          const iAmt = Math.floor(Math.random() * 3) + 4; // 4-6 sắt
+          const wAmt = (Math.floor(Math.random() * 4) + 6) * drillMult; // 6-9 gỗ
+          const sAmt = (Math.floor(Math.random() * 4) + 6) * drillMult; // 6-9 đá
+          const iAmt = (Math.floor(Math.random() * 3) + 4) * drillMult; // 4-6 sắt
           gameCtx.resourcePickups.push(new ResourcePickup(e.x - 15, e.y, 'wood', wAmt));
           gameCtx.resourcePickups.push(new ResourcePickup(e.x, e.y, 'stone', sAmt));
           gameCtx.resourcePickups.push(new ResourcePickup(e.x + 15, e.y, 'iron', iAmt));
@@ -1388,7 +1459,7 @@ function update() {
           } else {
             type = r < 0.4 ? 'wood' : r < 0.8 ? 'stone' : 'iron';
           }
-          const amt = Math.floor(Math.random() * 3) + 1;
+          const amt = (Math.floor(Math.random() * 3) + 1) * drillMult;
           gameCtx.resourcePickups.push(new ResourcePickup(e.x, e.y, type, amt));
         }
       }
@@ -1434,7 +1505,7 @@ function update() {
   for (let i = gameCtx.turretBullets.length - 1; i >= 0; i--) {
     const tb = gameCtx.turretBullets[i];
     tb.update(gameCtx.enemies);
-    if (!tb.active || tb.x < 0 || tb.x > 6000 || tb.y < 0 || tb.y > 6000) {
+    if (!tb.active || Math.hypot(tb.x - gameCtx.player.x, tb.y - gameCtx.player.y) > 1000) {
       tb.destroy3D();
       gameCtx.turretBullets.splice(i, 1);
     }
@@ -1465,8 +1536,86 @@ function update() {
   updateWaveControlPanel();
 
   if (gameCtx.inCave) {
-    gameCtx.player.x = Math.max(5000 + gameCtx.player.size, Math.min(6000 - gameCtx.player.size, gameCtx.player.x));
-    gameCtx.player.y = Math.max(5000 + gameCtx.player.size, Math.min(6000 - gameCtx.player.size, gameCtx.player.y));
+    // 1. Dọn dẹp quặng ở quá xa (> 1200px) để tránh rác bộ nhớ
+    for (let i = gameCtx.obstacles.length - 1; i >= 0; i--) {
+      const obs = gameCtx.obstacles[i];
+      if (['ore_stone', 'ore_iron', 'ore_gold', 'ore_diamond', 'rock_pillar'].includes(obs.type)) {
+        const dist = Math.hypot(obs.x - gameCtx.player.x, obs.y - gameCtx.player.y);
+        if (dist > 1200) {
+          obs.active = false;
+          obs.destroy3D();
+          gameCtx.obstacles.splice(i, 1);
+        }
+      }
+    }
+    
+    // 2. Tự động tái tạo quặng quanh người chơi (đảm bảo tối đa 12 quặng)
+    const localOres = gameCtx.obstacles.filter(obs => obs.active && ['ore_stone', 'ore_iron', 'ore_gold', 'ore_diamond'].includes(obs.type));
+    if (localOres.length < 12) {
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 350 + Math.random() * 450;
+      const ox = gameCtx.player.x + Math.cos(angle) * dist;
+      const oy = gameCtx.player.y + Math.sin(angle) * dist;
+      
+      let type = 'ore_stone';
+      let rich = false;
+      const r = Math.random();
+      if (gameCtx.currentCaveIndex === 0) {
+        type = r < 0.65 ? 'ore_stone' : r < 0.90 ? 'ore_iron' : r < 0.98 ? 'ore_gold' : 'ore_diamond';
+      } else if (gameCtx.currentCaveIndex === 1) {
+        type = r < 0.25 ? 'ore_stone' : r < 0.75 ? 'ore_iron' : r < 0.93 ? 'ore_gold' : 'ore_diamond';
+      } else {
+        type = r < 0.10 ? 'ore_stone' : r < 0.30 ? 'ore_iron' : r < 0.75 ? 'ore_gold' : 'ore_diamond';
+        rich = true;
+      }
+      
+      const ore = new Obstacle(ox, oy, type);
+      if (rich) {
+        ore.maxHp *= 2;
+        ore.hp = ore.maxHp;
+        ore.rich = true;
+      }
+      gameCtx.obstacles.push(ore);
+    }
+    
+    // 3. Tự động tái tạo cột đá stalagmites (đảm bảo tối đa 6 cột đá)
+    const localPillars = gameCtx.obstacles.filter(obs => obs.active && obs.type === 'rock_pillar');
+    if (localPillars.length < 6) {
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 300 + Math.random() * 500;
+      const ox = gameCtx.player.x + Math.cos(angle) * dist;
+      const oy = gameCtx.player.y + Math.sin(angle) * dist;
+      
+      gameCtx.obstacles.push(new Obstacle(ox, oy, 'rock_pillar'));
+    }
+
+    // 4. Dọn dẹp quái vật hang động ở quá xa (> 1200px)
+    for (let i = gameCtx.enemies.length - 1; i >= 0; i--) {
+      const e = gameCtx.enemies[i];
+      const dist = Math.hypot(e.x - gameCtx.player.x, e.y - gameCtx.player.y);
+      if (dist > 1200) {
+        e.dead = true;
+        e.destroy3D();
+        gameCtx.enemies.splice(i, 1);
+      }
+    }
+
+    // 5. Tự động tái tạo quái vật quanh người chơi (tối đa 8 quái)
+    if (gameCtx.enemies.length < 8) {
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 450 + Math.random() * 350;
+      const ex = gameCtx.player.x + Math.cos(angle) * dist;
+      const ey = gameCtx.player.y + Math.sin(angle) * dist;
+      
+      const types = ['cave_beetle', 'cave_spider', 'cave_bat'];
+      const type = types[Math.floor(Math.random() * types.length)];
+      
+      gameCtx.enemies.push(new Enemy(ex, ey, type, gameCtx.waveDifficulty, gameCtx.currentMap));
+    }
+  }
+
+  if (gameCtx.inCave) {
+    // Không giới hạn toạ độ người chơi trong hang động vô hạn
   } else {
     gameCtx.player.x = Math.max(gameCtx.player.size, Math.min(ARENA_WIDTH - gameCtx.player.size, gameCtx.player.x));
     gameCtx.player.y = Math.max(gameCtx.player.size, Math.min(ARENA_HEIGHT - gameCtx.player.size, gameCtx.player.y));
@@ -1509,12 +1658,45 @@ function draw() {
   }
   ctx.stroke();
 
-  // Vẽ biên giới đấu trường hoặc hang động
-  if (gameCtx.inCave) {
-    ctx.strokeStyle = '#9d00ff'; // Neon tím cho hang động
-    ctx.lineWidth = 4;
-    ctx.strokeRect(5000, 5000, 1000, 1000);
-  } else {
+  // Vẽ vân quặng phát sáng trên nền đất của hang động
+  if (gameCtx.inCave && gameCtx.player) {
+    ctx.save();
+    const veinColors = ['#00f3ff', '#9d00ff', '#ffe600'];
+    const veinColor = veinColors[gameCtx.currentCaveIndex] || '#00f3ff';
+    ctx.strokeStyle = veinColor;
+    ctx.shadowColor = veinColor;
+    ctx.shadowBlur = 8;
+    ctx.globalAlpha = 0.22;
+    ctx.lineWidth = 1.8;
+    
+    const gridSz = 200;
+    const startGX = Math.floor((gameCtx.player.x - 700) / gridSz) * gridSz;
+    const endGX = Math.ceil((gameCtx.player.x + 700) / gridSz) * gridSz;
+    const startGY = Math.floor((gameCtx.player.y - 700) / gridSz) * gridSz;
+    const endGY = Math.ceil((gameCtx.player.y + 700) / gridSz) * gridSz;
+    
+    for (let gx = startGX; gx < endGX; gx += gridSz) {
+      for (let gy = startGY; gy < endGY; gy += gridSz) {
+        const seed = Math.sin(gx * 0.05 + gy * 0.12) * 10000;
+        const offset = seed - Math.floor(seed);
+        
+        ctx.beginPath();
+        ctx.moveTo(gx + gridSz * 0.2, gy + gridSz * 0.2);
+        ctx.lineTo(gx + gridSz * (0.3 + offset * 0.4), gy + gridSz * (0.4 - offset * 0.2));
+        ctx.lineTo(gx + gridSz * (0.6 - offset * 0.2), gy + gridSz * (0.5 + offset * 0.3));
+        ctx.lineTo(gx + gridSz * 0.8, gy + gridSz * 0.8);
+        
+        ctx.moveTo(gx + gridSz * (0.3 + offset * 0.4), gy + gridSz * (0.4 - offset * 0.2));
+        ctx.lineTo(gx + gridSz * (0.2 + offset * 0.2), gy + gridSz * 0.7);
+        
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  // Vẽ biên giới đấu trường (nếu ở ngoài map chính)
+  if (!gameCtx.inCave) {
     ctx.strokeStyle = '#ff0055';
     ctx.lineWidth = 4;
     ctx.strokeRect(0, 0, ARENA_WIDTH, ARENA_HEIGHT);
@@ -1593,6 +1775,41 @@ function draw() {
 
   ctx.restore(); // Kết thúc camera translate
 
+  // Vẽ mũi tên chỉ hướng về giếng trời cổng ra khi ở trong hang động
+  if (gameCtx.inCave && gameCtx.player) {
+    const exit = gameCtx.caveExits[gameCtx.currentCaveIndex];
+    if (exit) {
+      const dx = exit.x - gameCtx.player.x;
+      const dy = exit.y - gameCtx.player.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > 250) {
+        const angle = Math.atan2(dy, dx);
+        ctx.save();
+        
+        const arrowDist = 120;
+        const arrowX = canvas.width / 2 + Math.cos(angle) * arrowDist;
+        const arrowY = canvas.height / 2 + Math.sin(angle) * arrowDist;
+        
+        ctx.translate(arrowX, arrowY);
+        ctx.rotate(angle);
+        
+        ctx.fillStyle = '#00ff7f';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#00ff7f';
+        
+        ctx.beginPath();
+        ctx.moveTo(12, 0);
+        ctx.lineTo(-6, -8);
+        ctx.lineTo(-2, 0);
+        ctx.lineTo(-6, 8);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.restore();
+      }
+    }
+  }
+
   // Vẽ bóng tối ban đêm
   if (gameCtx.gameState === 'PLAYING' && gameCtx.waveState === 'ACTIVE') {
     ctx.save();
@@ -1622,6 +1839,14 @@ function draw() {
         else if (type === 'campfire') { previewSize = 16; previewColor = 'rgba(255, 69, 0, 0.5)'; }
         else if (type === 'spiketrap') { previewSize = 20; previewColor = 'rgba(255, 230, 0, 0.5)'; }
         else if (type === 'turret') { previewSize = 16; previewColor = 'rgba(0, 243, 255, 0.5)'; }
+        
+        let isPlaceable = true;
+        if (typeof window.canPlaceStructureAt === 'function') {
+          isPlaceable = window.canPlaceStructureAt(mouse.x, mouse.y, previewSize).valid;
+        }
+        if (!isPlaceable) {
+          previewColor = 'rgba(255, 0, 85, 0.65)';
+        }
         
         ctx.save();
         const mx = mouse.x - camX;
@@ -1849,28 +2074,6 @@ function setupWaveControl() {
     skipBtn.addEventListener('click', () => {
       if (gameCtx.waveState === 'BREAK') {
         gameCtx.waveTimer = 0;
-      } else if (gameCtx.waveState === 'ACTIVE') {
-        gameCtx.currentWave++;
-        
-        const nextWaveEnemies = 8 + gameCtx.currentWave * 4;
-        gameCtx.enemiesToSpawnInWave += nextWaveEnemies;
-        gameCtx.totalEnemiesInWave += nextWaveEnemies;
-        gameCtx.waveSpawnTimer = 0;
-        gameCtx.waveAnnouncementTimer = 150;
-
-        let diffMult = 1.0;
-        if (gameCtx.currentDifficulty === 'hard') diffMult = 1.4;
-        else if (gameCtx.currentDifficulty === 'hardcore') diffMult = 2.2;
-        gameCtx.waveDifficulty = (1.0 + (gameCtx.currentWave - 1) * 0.4) * diffMult;
-
-        if (gameCtx.currentWave % 5 === 0) {
-          spawnBoss();
-        }
-        
-        currentSaveData.gold += 15;
-        saveAccountSave();
-        
-        particleManager.createShockwave(gameCtx.player.x, gameCtx.player.y, '#ff0055', 120);
       }
     });
   }

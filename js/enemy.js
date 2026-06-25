@@ -89,10 +89,10 @@ class ResourcePickup {
   constructor(x, y, type = 'wood', amount = 1) {
     this.x = x;
     this.y = y;
-    this.type = type; // 'wood', 'stone', 'iron'
+    this.type = type; // 'wood', 'stone', 'iron', 'gold_ore', 'diamond_ore'
     this.amount = amount;
-    this.color = type === 'wood' ? '#00ff7f' : type === 'stone' ? '#87cefa' : '#da70d6';
-    this.size = type === 'wood' ? 5 : type === 'stone' ? 5.5 : 6;
+    this.color = type === 'wood' ? '#00ff7f' : type === 'stone' ? '#87cefa' : type === 'iron' ? '#da70d6' : type === 'gold_ore' ? '#ffd700' : '#00ffff';
+    this.size = type === 'wood' ? 5 : type === 'stone' ? 5.5 : type === 'iron' ? 6 : type === 'gold_ore' ? 6 : 6.5;
     this.vx = (Math.random() * 2 - 1) * 1.5;
     this.vy = (Math.random() * 2 - 1) * 1.5;
     this.speed = 0;
@@ -129,13 +129,23 @@ class ResourcePickup {
         player.stone = (player.stone || 0) + this.amount;
       } else if (this.type === 'iron') {
         player.iron = (player.iron || 0) + this.amount;
+      } else if (this.type === 'gold_ore') {
+        player.gold_ore = (player.gold_ore || 0) + this.amount;
+      } else if (this.type === 'diamond_ore') {
+        player.diamond_ore = (player.diamond_ore || 0) + this.amount;
       }
       this.collected = true;
       soundManager.playOrbPickup(this.type === 'wood' ? 'wood' : this.type === 'stone' ? 'wind' : 'lightning');
       
       // Floating indicator when picking up
+      let displayName = 'Gỗ';
+      if (this.type === 'stone') displayName = 'Đá';
+      else if (this.type === 'iron') displayName = 'Sắt';
+      else if (this.type === 'gold_ore') displayName = 'Vàng';
+      else if (this.type === 'diamond_ore') displayName = 'K.Cương';
+      
       if (window.FloatingText && gameCtx.floatingTexts) {
-        gameCtx.floatingTexts.push(new FloatingText(this.x, this.y - 12, `+${this.amount} ${this.type === 'wood' ? 'Gỗ' : this.type === 'stone' ? 'Đá' : 'Sắt'}`, this.color));
+        gameCtx.floatingTexts.push(new FloatingText(this.x, this.y - 12, `+${this.amount} ${displayName}`, this.color));
       }
       
       this.destroy3D();
@@ -173,6 +183,29 @@ class ResourcePickup {
       ctx.lineTo(this.x + this.size * 0.9, this.y);
       ctx.lineTo(this.x, this.y + this.size * 1.3);
       ctx.lineTo(this.x - this.size * 0.9, this.y);
+      ctx.closePath();
+      ctx.fill();
+    } else if (this.type === 'gold_ore') {
+      // Golden nugget (jagged circle)
+      ctx.beginPath();
+      const points = 7;
+      for (let i = 0; i < points; i++) {
+        const angle = (i / points) * Math.PI * 2;
+        const r = this.size * (0.8 + Math.sin(i * 1.7) * 0.15);
+        const rx = this.x + Math.cos(angle) * r;
+        const ry = this.y + Math.sin(angle) * r;
+        if (i === 0) ctx.moveTo(rx, ry);
+        else ctx.lineTo(rx, ry);
+      }
+      ctx.closePath();
+      ctx.fill();
+    } else if (this.type === 'diamond_ore') {
+      // Shiny diamond crystal shape (star/double-cone)
+      ctx.beginPath();
+      ctx.moveTo(this.x, this.y - this.size * 1.3);
+      ctx.lineTo(this.x + this.size * 0.75, this.y);
+      ctx.lineTo(this.x, this.y + this.size * 1.3);
+      ctx.lineTo(this.x - this.size * 0.75, this.y);
       ctx.closePath();
       ctx.fill();
     }
@@ -281,32 +314,81 @@ class CaveEntrance {
 
   draw(ctx) {
     ctx.save();
+    
+    // Check distance to player
+    const dist = Math.hypot(gameCtx.player.x - this.x, gameCtx.player.y - this.y);
     ctx.translate(this.x, this.y);
     
+    // 1. Draw jagged rock arch (vector rock shapes)
+    ctx.strokeStyle = '#222224';
+    ctx.lineWidth = 2;
+    
+    const numRocks = 8;
+    for (let i = 0; i < numRocks; i++) {
+      ctx.save();
+      const angle = Math.PI + (i / (numRocks - 1)) * Math.PI; // semi circle arch over top
+      ctx.translate(Math.cos(angle) * 32, Math.sin(angle) * 22);
+      ctx.rotate(angle + Math.PI / 2 + (i % 2 === 0 ? 0.2 : -0.2));
+      
+      ctx.fillStyle = i % 2 === 0 ? '#4a4a4d' : '#333336';
+      ctx.beginPath();
+      ctx.moveTo(-12, -8);
+      ctx.lineTo(10, -12);
+      ctx.lineTo(15, 10);
+      ctx.lineTo(-8, 12);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+    
+    // 2. Draw dark interior void (ellipse)
+    ctx.fillStyle = '#06060c';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 26, 18, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // 3. Draw neon purple magic swirl core
+    ctx.save();
     ctx.shadowBlur = 15;
     ctx.shadowColor = this.color;
     ctx.strokeStyle = this.color;
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 2.5;
     
+    const angleOffset = Date.now() * 0.0035;
     ctx.beginPath();
-    ctx.arc(0, 0, this.size - 5, 0, Math.PI * 2);
-    ctx.stroke();
-    
-    // Draw portal swirl lines
-    const angleOffset = Date.now() * 0.002;
-    ctx.beginPath();
-    for (let i = 0; i < 4; i++) {
-      const a = angleOffset + (i / 4) * Math.PI * 2;
-      ctx.moveTo(0, 0);
-      ctx.lineTo(Math.cos(a) * (this.size - 5), Math.sin(a) * (this.size - 5));
+    for (let i = 0; i < 3; i++) {
+      const startAngle = angleOffset + (i / 3) * Math.PI * 2;
+      for (let theta = 0; theta < Math.PI; theta += 0.1) {
+        const currentAngle = startAngle + theta;
+        const radius = (1 - (theta / Math.PI)) * 18 + 4;
+        const sx = Math.cos(currentAngle) * radius;
+        const sy = Math.sin(currentAngle) * radius * 0.7;
+        if (theta === 0) {
+          ctx.moveTo(sx, sy);
+        } else {
+          ctx.lineTo(sx, sy);
+        }
+      }
     }
     ctx.stroke();
+    ctx.restore();
 
-    // Draw text prompt
-    ctx.font = "bold 10px 'Orbitron', sans-serif";
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
-    ctx.fillText("VÀO HANG [E]", 0, -this.size - 8);
+    // 4. Draw prompt if player is near
+    if (dist < 75) {
+      ctx.font = "bold 10px 'Orbitron', sans-serif";
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+      ctx.strokeStyle = this.color;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(-55, -this.size - 25, 110, 18, 4);
+      ctx.fill();
+      ctx.stroke();
+      
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.fillText("VÀO HANG [E]", 0, -this.size - 13);
+    }
     
     ctx.restore();
   }
@@ -324,32 +406,81 @@ class CaveExit {
 
   draw(ctx) {
     ctx.save();
+    const dist = Math.hypot(gameCtx.player.x - this.x, gameCtx.player.y - this.y);
     ctx.translate(this.x, this.y);
     
-    ctx.shadowBlur = 15;
-    ctx.shadowColor = this.color;
-    ctx.strokeStyle = this.color;
-    ctx.lineWidth = 3;
+    // 1. Draw light pool on ground (ellipse base)
+    const baseGrad = ctx.createRadialGradient(0, 0, 5, 0, 0, this.size * 1.5);
+    baseGrad.addColorStop(0, 'rgba(255, 255, 220, 0.6)');
+    baseGrad.addColorStop(0.4, 'rgba(255, 230, 150, 0.3)');
+    baseGrad.addColorStop(1, 'rgba(255, 230, 150, 0)');
+    ctx.fillStyle = baseGrad;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, this.size * 1.5, this.size * 0.8, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // 2. Draw vertical shaft of sunlight (gradient cone pointing upwards)
+    const shaftHeight = 400;
+    const coneGrad = ctx.createLinearGradient(0, 0, 0, -shaftHeight);
+    coneGrad.addColorStop(0, 'rgba(255, 255, 220, 0.45)');
+    coneGrad.addColorStop(0.6, 'rgba(255, 230, 150, 0.2)');
+    coneGrad.addColorStop(1, 'rgba(255, 230, 150, 0.05)');
+    ctx.fillStyle = coneGrad;
     
     ctx.beginPath();
-    ctx.arc(0, 0, this.size - 5, 0, Math.PI * 2);
-    ctx.stroke();
+    ctx.moveTo(-this.size * 1.5, 0);
+    ctx.lineTo(-this.size * 0.5, -shaftHeight);
+    ctx.lineTo(this.size * 0.5, -shaftHeight);
+    ctx.lineTo(this.size * 1.5, 0);
+    ctx.closePath();
+    ctx.fill();
     
-    // Swirl
-    const angleOffset = -Date.now() * 0.002;
-    ctx.beginPath();
-    for (let i = 0; i < 4; i++) {
-      const a = angleOffset + (i / 4) * Math.PI * 2;
-      ctx.moveTo(0, 0);
-      ctx.lineTo(Math.cos(a) * (this.size - 5), Math.sin(a) * (this.size - 5));
+    // 3. Draw neon dust particles rising up within the shaft
+    if (!this.particles) {
+      this.particles = [];
+      for (let i = 0; i < 20; i++) {
+        this.particles.push({
+          x: (Math.random() - 0.5) * this.size * 2,
+          y: -Math.random() * shaftHeight,
+          speed: Math.random() * 0.8 + 0.4,
+          size: Math.random() * 2 + 1,
+          alpha: Math.random() * 0.6 + 0.4
+        });
+      }
     }
-    ctx.stroke();
-
-    // Draw prompt
-    ctx.font = "bold 10px 'Orbitron', sans-serif";
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
-    ctx.fillText("RA NGOÀI [E]", 0, -this.size - 8);
+    
+    ctx.fillStyle = 'rgba(255, 255, 200, 0.7)';
+    this.particles.forEach(p => {
+      p.y -= p.speed;
+      if (p.y < -shaftHeight) {
+        p.y = 0;
+        p.x = (Math.random() - 0.5) * this.size * 2;
+      }
+      ctx.save();
+      ctx.shadowBlur = 6;
+      ctx.shadowColor = '#ffe600';
+      ctx.globalAlpha = p.alpha * (1 - Math.abs(p.y) / shaftHeight);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    });
+    
+    // 4. Draw prompt if player is near
+    if (dist < 75) {
+      ctx.font = "bold 10px 'Orbitron', sans-serif";
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+      ctx.strokeStyle = '#ffe600';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(-55, -this.size - 25, 110, 18, 4);
+      ctx.fill();
+      ctx.stroke();
+      
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.fillText("RA NGOÀI [E]", 0, -this.size - 13);
+    }
     
     ctx.restore();
   }
@@ -359,8 +490,9 @@ class Obstacle {
   constructor(x, y, type) {
     this.x = x;
     this.y = y;
-    this.type = type; // 'barricade', 'stonewall', 'ironwall', 'campfire', 'spiketrap', 'turret', 'ore_stone', 'ore_iron'
+    this.type = type;
     this.active = true;
+    this.isCrafted = !['ore_stone', 'ore_iron', 'rock_pillar', 'ore_gold', 'ore_diamond'].includes(type);
     
     // Default properties based on type
     if (type === 'barricade') {
@@ -415,6 +547,58 @@ class Obstacle {
       this.size = 18;
       this.color = '#da70d6';
       this.solid = true;
+    } else if (type === 'rock_pillar') {
+      this.maxHp = 9999999;
+      this.hp = this.maxHp;
+      this.size = 20;
+      this.color = '#5a5a5d'; // dark gray
+      this.solid = true;
+    } else if (type === 'ore_gold') {
+      this.maxHp = 200;
+      this.hp = this.maxHp;
+      this.size = 18;
+      this.color = '#ffd700'; // Vàng neon
+      this.solid = true;
+    } else if (type === 'ore_diamond') {
+      this.maxHp = 300;
+      this.hp = this.maxHp;
+      this.size = 18;
+      this.color = '#00ffff'; // Lam neon
+      this.solid = true;
+    } else if (type === 'crafting_table_2') {
+      this.maxHp = 500;
+      this.hp = this.maxHp;
+      this.size = 20;
+      this.color = '#ffa500'; // Cam vàng neon
+      this.solid = true;
+    } else if (type === 'flame_turret') {
+      this.maxHp = 350;
+      this.hp = this.maxHp;
+      this.size = 16;
+      this.color = '#ff4500'; // Đỏ cam
+      this.solid = true;
+      this.shootTimer = 0;
+      this.shootCooldown = 25; // nhanh hơn turret thường
+    } else if (type === 'tesla_turret') {
+      this.maxHp = 350;
+      this.hp = this.maxHp;
+      this.size = 16;
+      this.color = '#cc00ff'; // Tím điện
+      this.solid = true;
+      this.shootTimer = 0;
+      this.shootCooldown = 50; // giật lan, cd lâu hơn chút
+    } else if (type === 'electric_fence') {
+      this.maxHp = 800;
+      this.hp = this.maxHp;
+      this.size = 20;
+      this.color = '#00ffff'; // Điện lam
+      this.solid = true;
+    } else if (type === 'elemental_bomb') {
+      this.maxHp = 1;
+      this.hp = this.maxHp;
+      this.size = 15;
+      this.color = '#ff00ff'; // Hồng neon
+      this.solid = false;
     }
 
     if (window.scene3D) {
@@ -424,16 +608,21 @@ class Obstacle {
 
   takeDamage(amount) {
     if (!this.active) return;
+    if (this.type === 'rock_pillar') return; // indestructible
     
     // Check if mining
-    const isOre = this.type === 'ore_stone' || this.type === 'ore_iron';
+    const isOre = this.type === 'ore_stone' || this.type === 'ore_iron' || this.type === 'ore_gold' || this.type === 'ore_diamond';
     
     this.hp -= amount;
     
     if (isOre) {
       // Drop resources on taking damage (e.g. 25% chance per hit)
       if (Math.random() < 0.25) {
-        const dropType = this.type === 'ore_stone' ? 'stone' : 'iron';
+        let dropType = 'stone';
+        if (this.type === 'ore_iron') dropType = 'iron';
+        else if (this.type === 'ore_gold') dropType = 'gold_ore';
+        else if (this.type === 'ore_diamond') dropType = 'diamond_ore';
+
         const amount = this.rich ? 2 : 1;
         gameCtx.resourcePickups.push(new ResourcePickup(
           this.x + (Math.random() * 20 - 10),
@@ -455,7 +644,11 @@ class Obstacle {
       
       if (isOre) {
         // Drop lots of resources on destruction
-        const dropType = this.type === 'ore_stone' ? 'stone' : 'iron';
+        let dropType = 'stone';
+        if (this.type === 'ore_iron') dropType = 'iron';
+        else if (this.type === 'ore_gold') dropType = 'gold_ore';
+        else if (this.type === 'ore_diamond') dropType = 'diamond_ore';
+
         const mult = this.rich ? 2 : 1;
         const count = (Math.floor(Math.random() * 3) + 3) * mult; // 3-5 drops * multiplier
         for (let i = 0; i < count; i++) {
@@ -577,6 +770,152 @@ class Obstacle {
             soundManager.playSpell('water_water'); // play similar sound
           }
         }
+      }
+    } else if (this.type === 'flame_turret') {
+      this.shootTimer++;
+      if (this.shootTimer >= this.shootCooldown) {
+        let nearestEnemy = null;
+        let minDist = 220; // Tầm ngắn hơn turret thường
+        for (const e of gameCtx.enemies) {
+          if (e.dead) continue;
+          const dist = Math.hypot(e.x - this.x, e.y - this.y);
+          if (dist < minDist) {
+            minDist = dist;
+            nearestEnemy = e;
+          }
+        }
+        if (nearestEnemy) {
+          this.shootTimer = 0;
+          const angle = Math.atan2(nearestEnemy.y - this.y, nearestEnemy.x - this.x);
+          // Gây sát thương hình nón phun lửa diện rộng
+          for (const e of gameCtx.enemies) {
+            if (e.dead) continue;
+            const edist = Math.hypot(e.x - this.x, e.y - this.y);
+            if (edist < 220) {
+              const eangle = Math.atan2(e.y - this.y, e.x - this.x);
+              let diff = Math.abs(eangle - angle);
+              if (diff > Math.PI) diff = Math.PI * 2 - diff;
+              if (diff < 0.45) { // Góc phun lửa ~50 độ
+                e.takeDamage(15);
+                e.applyEffect('burn', 120); // Thiêu đốt 2 giây
+              }
+            }
+          }
+          // Hiệu ứng lửa phun
+          for (let i = 0; i < 8; i++) {
+            const fa = angle + (Math.random() * 0.4 - 0.2);
+            const fspd = 3 + Math.random() * 4;
+            particleManager.addParticle(
+              this.x + Math.cos(angle) * this.size,
+              this.y + Math.sin(angle) * this.size,
+              '#ff4500',
+              2.5,
+              3.0,
+              fa,
+              0.05
+            );
+          }
+          if (soundManager.playSpell) {
+            soundManager.playSpell('fire_fire');
+          }
+        }
+      }
+    } else if (this.type === 'tesla_turret') {
+      this.shootTimer++;
+      if (this.shootTimer >= this.shootCooldown) {
+        let nearestEnemy = null;
+        let minDist = 280;
+        for (const e of gameCtx.enemies) {
+          if (e.dead) continue;
+          const dist = Math.hypot(e.x - this.x, e.y - this.y);
+          if (dist < minDist) {
+            minDist = dist;
+            nearestEnemy = e;
+          }
+        }
+        if (nearestEnemy) {
+          this.shootTimer = 0;
+          // Chain lightning logic
+          const targets = [nearestEnemy];
+          let current = nearestEnemy;
+          for (let chain = 0; chain < 3; chain++) { // chain to 3 more (total 4)
+            let nextTarget = null;
+            let nextMinDist = 120;
+            for (const e of gameCtx.enemies) {
+              if (e.dead || targets.includes(e)) continue;
+              const dist = Math.hypot(e.x - current.x, e.y - current.y);
+              if (dist < nextMinDist) {
+                nextMinDist = dist;
+                nextTarget = e;
+              }
+            }
+            if (nextTarget) {
+              targets.push(nextTarget);
+              current = nextTarget;
+            } else {
+              break;
+            }
+          }
+          // Deal damage, apply shock, and draw lightning particles
+          targets.forEach((e, idx) => {
+            e.takeDamage(22);
+            e.applyEffect('shock', 40); // shock effect
+            
+            // Draw electric beam from previous target to current
+            const prev = idx === 0 ? this : targets[idx - 1];
+            for (let i = 0; i < 6; i++) {
+              const px = prev.x + (e.x - prev.x) * (i / 6) + (Math.random() * 12 - 6);
+              const py = prev.y + (e.y - prev.y) * (i / 6) + (Math.random() * 12 - 6);
+              particleManager.addParticle(px, py, '#00ffff', 1.5, 1.5, Math.random() * Math.PI * 2, 0.1);
+            }
+          });
+          if (soundManager.playSpell) {
+            soundManager.playSpell('lightning_lightning');
+          }
+        }
+      }
+    } else if (this.type === 'elemental_bomb') {
+      // Check if any enemy is very close
+      let trigger = false;
+      for (const e of gameCtx.enemies) {
+        if (e.dead) continue;
+        const dist = Math.hypot(e.x - this.x, e.y - this.y);
+        if (dist < this.size + e.size + 10) {
+          trigger = true;
+          break;
+        }
+      }
+      if (trigger) {
+        // Explode!
+        for (const e of gameCtx.enemies) {
+          if (e.dead) continue;
+          const dist = Math.hypot(e.x - this.x, e.y - this.y);
+          if (dist < 150) {
+            e.takeDamage(150);
+            e.applyEffect('freeze_solid', 90); // Đóng băng cứng quái vật 1.5 giây
+            e.applyEffect('burn', 180); // Thiêu đốt 3 giây
+            e.applyEffect('shock', 60); // Giật điện tê liệt 1 giây
+          }
+        }
+        // Explosive visual effects
+        particleManager.createShockwave(this.x, this.y, '#ff00ff', 150);
+        for (let i = 0; i < 40; i++) {
+          const color = Math.random() < 0.33 ? '#00ffff' : Math.random() < 0.5 ? '#ff4500' : '#ff00ff';
+          particleManager.addParticle(
+            this.x,
+            this.y,
+            color,
+            Math.random() * 4 + 2,
+            Math.random() * 3 + 2,
+            Math.random() * Math.PI * 2,
+            0.04
+          );
+        }
+        if (soundManager.playExplosion) {
+          soundManager.playExplosion();
+        }
+        this.active = false;
+        this.destroy3D();
       }
     }
 
@@ -715,9 +1054,14 @@ class Obstacle {
       ctx.fill();
       
       ctx.restore();
-    } else if (this.type === 'ore_stone' || this.type === 'ore_iron') {
+    } else if (this.type === 'ore_stone' || this.type === 'ore_iron' || this.type === 'ore_gold' || this.type === 'ore_diamond') {
       // Faceted crystal rock
-      ctx.fillStyle = this.type === 'ore_stone' ? 'rgba(135,206,250,0.2)' : 'rgba(218,112,214,0.2)';
+      let fillCol = 'rgba(135,206,250,0.2)'; // stone
+      if (this.type === 'ore_iron') fillCol = 'rgba(218,112,214,0.2)';
+      else if (this.type === 'ore_gold') fillCol = 'rgba(255,215,0,0.2)';
+      else if (this.type === 'ore_diamond') fillCol = 'rgba(0,255,255,0.2)';
+
+      ctx.fillStyle = fillCol;
       ctx.beginPath();
       ctx.moveTo(this.x, this.y - this.size);
       ctx.lineTo(this.x + this.size * 0.8, this.y - this.size * 0.4);
@@ -737,10 +1081,149 @@ class Obstacle {
       ctx.moveTo(this.x, this.y + this.size * 0.4);
       ctx.lineTo(this.x + this.size, this.y + this.size * 0.4);
       ctx.stroke();
+    } else if (this.type === 'crafting_table_2') {
+      // Modern hexagonal table with golden core
+      ctx.fillStyle = 'rgba(255, 140, 0, 0.15)';
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const angle = (i / 6) * Math.PI * 2;
+        const rx = this.x + Math.cos(angle) * this.size;
+        const ry = this.y + Math.sin(angle) * this.size;
+        if (i === 0) ctx.moveTo(rx, ry);
+        else ctx.lineTo(rx, ry);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Golden core logo/rune
+      ctx.strokeStyle = '#ffd700';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size * 0.4, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = '#ffd700';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size * 0.18, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (this.type === 'flame_turret') {
+      ctx.fillStyle = 'rgba(255, 69, 0, 0.15)';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      
+      let targetAngle = 0;
+      let nearestEnemy = null;
+      let minDist = 220;
+      for (const e of gameCtx.enemies) {
+        if (e.dead) continue;
+        const dist = Math.hypot(e.x - this.x, e.y - this.y);
+        if (dist < minDist) {
+          minDist = dist;
+          nearestEnemy = e;
+        }
+      }
+      if (nearestEnemy) {
+        targetAngle = Math.atan2(nearestEnemy.y - this.y, nearestEnemy.x - this.x);
+      } else {
+        targetAngle = Date.now() * 0.001;
+      }
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(targetAngle);
+      
+      // Double barrels for flame
+      ctx.fillStyle = '#ff4500';
+      ctx.fillRect(0, -5, this.size * 1.4, 3);
+      ctx.fillRect(0, 2, this.size * 1.4, 3);
+      
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(0, 0, this.size * 0.35, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    } else if (this.type === 'tesla_turret') {
+      // Triangular base
+      ctx.fillStyle = 'rgba(204, 0, 255, 0.15)';
+      ctx.beginPath();
+      for (let i = 0; i < 3; i++) {
+        const angle = (i / 3) * Math.PI * 2 - Math.PI / 2;
+        const rx = this.x + Math.cos(angle) * this.size;
+        const ry = this.y + Math.sin(angle) * this.size;
+        if (i === 0) ctx.moveTo(rx, ry);
+        else ctx.lineTo(rx, ry);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      
+      // Tesla coil on top (multiple rings and a center ball)
+      const time = Date.now() * 0.02;
+      const pulse = 1.0 + Math.sin(time) * 0.12;
+      ctx.strokeStyle = '#cc00ff';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size * 0.45 * pulse, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = '#00ffff';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size * 0.22, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (this.type === 'electric_fence') {
+      // Electrified square fence
+      ctx.fillStyle = 'rgba(0, 255, 255, 0.08)';
+      ctx.beginPath();
+      ctx.rect(this.x - this.size, this.y - this.size, this.size * 2, this.size * 2);
+      ctx.fill();
+      ctx.stroke();
+      
+      // Inner electric arcs/cracks
+      ctx.strokeStyle = 'rgba(0, 255, 255, 0.7)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(this.x - this.size + 4, this.y - this.size + (Math.random() * 8 - 4) + this.size);
+      ctx.lineTo(this.x - this.size + 8, this.y - 3);
+      ctx.lineTo(this.x + 2, this.y + 4);
+      ctx.lineTo(this.x + this.size - 4, this.y - this.size + (Math.random() * 8 - 4) + this.size);
+      ctx.stroke();
+    } else if (this.type === 'elemental_bomb') {
+      const pulse = 1.0 + Math.sin(Date.now() * 0.02) * 0.25;
+      ctx.fillStyle = 'rgba(255, 0, 255, 0.1)';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size * pulse, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      
+      ctx.fillStyle = '#ff00ff';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size * 0.4, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (this.type === 'rock_pillar') {
+      // Draw stalagmite rock pillar (pointed shard polygon)
+      ctx.fillStyle = 'rgba(90, 90, 93, 0.35)';
+      ctx.strokeStyle = '#5a5a5d';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(this.x - this.size, this.y + this.size * 0.7);
+      ctx.lineTo(this.x - this.size * 0.4, this.y - this.size);
+      ctx.lineTo(this.x + this.size * 0.4, this.y - this.size * 1.2);
+      ctx.lineTo(this.x + this.size, this.y + this.size * 0.7);
+      ctx.lineTo(this.x + this.size * 0.5, this.y + this.size * 0.9);
+      ctx.lineTo(this.x - this.size * 0.5, this.y + this.size * 0.9);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.moveTo(this.x - this.size * 0.4, this.y - this.size);
+      ctx.lineTo(this.x, this.y + this.size * 0.9);
+      ctx.lineTo(this.x + this.size * 0.4, this.y - this.size * 1.2);
+      ctx.stroke();
     }
 
     // Health bar
-    if (this.hp < this.maxHp && this.type !== 'ore_stone' && this.type !== 'ore_iron') {
+    if (this.hp < this.maxHp && !['ore_stone', 'ore_iron', 'ore_gold', 'ore_diamond'].includes(this.type)) {
       const barW = this.size * 2;
       const barH = 3;
       const bx = this.x - barW / 2;
@@ -765,8 +1248,12 @@ class Obstacle {
     else if (this.type === 'ironwall') geom = new THREE.BoxGeometry(this.size * 2.0, this.size * 1.8, this.size * 2.0);
     else if (this.type === 'campfire') geom = new THREE.ConeGeometry(this.size * 0.8, this.size * 1.2, 8);
     else if (this.type === 'spiketrap') geom = new THREE.PlaneGeometry(this.size * 1.8, this.size * 1.8);
-    else if (this.type === 'turret') geom = new THREE.CylinderGeometry(this.size * 0.8, this.size * 0.8, this.size * 1.2, 8);
-    else if (this.type === 'ore_stone' || this.type === 'ore_iron') geom = new THREE.DodecahedronGeometry(this.size * 0.9);
+    else if (this.type === 'turret' || this.type === 'flame_turret') geom = new THREE.CylinderGeometry(this.size * 0.8, this.size * 0.8, this.size * 1.2, 8);
+    else if (this.type === 'tesla_turret') geom = new THREE.ConeGeometry(this.size * 0.8, this.size * 1.5, 4);
+    else if (this.type === 'electric_fence') geom = new THREE.BoxGeometry(this.size * 1.8, this.size * 1.2, this.size * 1.8);
+    else if (this.type === 'elemental_bomb') geom = new THREE.SphereGeometry(this.size * 0.7, 8, 8);
+    else if (this.type === 'crafting_table_2') geom = new THREE.CylinderGeometry(this.size * 0.9, this.size * 0.9, this.size * 0.8, 6);
+    else if (this.type === 'ore_stone' || this.type === 'ore_iron' || this.type === 'rock_pillar' || this.type === 'ore_gold' || this.type === 'ore_diamond') geom = new THREE.DodecahedronGeometry(this.size * 0.9);
     
     const mainMesh = new THREE.Mesh(geom, mat);
     if (this.type === 'spiketrap') {

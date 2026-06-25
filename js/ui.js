@@ -284,9 +284,18 @@ function updateAccountMenuUI() {
   const menuGold = document.getElementById('menu-gold');
   const shopGoldDisplay = document.getElementById('shop-gold-display');
   
-  if (usernameDisplay) usernameDisplay.textContent = safeStorage.getItem('spellfusion_session') || 'guest';
+  const lobbyUser = document.getElementById('lobby-username-display');
+  const lobbyLv   = document.getElementById('lobby-menu-level');
+  const lobbyGold = document.getElementById('lobby-menu-gold');
+  const sessionUser = safeStorage.getItem('spellfusion_session') || 'guest';
+
+  if (usernameDisplay) usernameDisplay.textContent = sessionUser;
   if (menuLevel) menuLevel.textContent = `LV ${currentSaveData.accountLevel}`;
   
+  if (lobbyUser) lobbyUser.textContent = sessionUser;
+  if (lobbyLv)   lobbyLv.textContent   = currentSaveData.accountLevel;
+  if (lobbyGold) lobbyGold.textContent = currentSaveData.gold;
+
   const xpNeeded = currentSaveData.accountLevel * 100;
   const xpPct = Math.min(100, (currentSaveData.accountXp / xpNeeded) * 100);
   if (menuXpBar) menuXpBar.style.width = `${xpPct}%`;
@@ -362,7 +371,7 @@ function setupAuth() {
   }
 
   if (loginBtn) {
-    loginBtn.addEventListener('click', () => {
+    loginBtn.addEventListener('click', async () => {
       const username = loginUsernameInput ? loginUsernameInput.value.trim().toLowerCase() : '';
       const password = loginPasswordInput ? loginPasswordInput.value : '';
       
@@ -371,23 +380,52 @@ function setupAuth() {
         return;
       }
       
-      const accounts = getAccounts();
-      if (!accounts[username]) {
-        if (loginMessage) loginMessage.textContent = 'Tài khoản không tồn tại!';
+      if (loginMessage) {
+        loginMessage.style.color = 'var(--neon-cyan)';
+        loginMessage.textContent = 'Đang đăng nhập Cloud... ⌛';
+      }
+      
+      // Perform online login check
+      const res = await onlineLogin(username, password);
+      
+      if (!res.success) {
+        // Fallback to local login if offline or API error
+        const accounts = getAccounts();
+        if (accounts[username] && accounts[username] === password) {
+          if (loginMessage) {
+            loginMessage.style.color = 'var(--neon-yellow)';
+            loginMessage.textContent = 'Đăng nhập Ngoại Tuyến (Offline)!';
+          }
+          loadAccountSave(username);
+          setTimeout(() => {
+            if (loginScreen) loginScreen.classList.remove('active');
+            updateAccountMenuUI();
+            setupCharacterSelection();
+            setupShop();
+            if (typeof enterLobby === 'function') enterLobby();
+          }, 1000);
+          return;
+        }
+        
+        if (loginMessage) {
+          loginMessage.style.color = 'var(--neon-magenta)';
+          loginMessage.textContent = res.message;
+        }
         return;
       }
       
-      if (accounts[username] !== password) {
-        if (loginMessage) loginMessage.textContent = 'Sai mật khẩu!';
-        return;
+      if (loginMessage) {
+        loginMessage.style.color = '#00ff7f';
+        loginMessage.textContent = res.message || 'Đăng nhập thành công! 🎉';
       }
       
-      loadAccountSave(username);
-      if (loginScreen) loginScreen.classList.remove('active');
-      updateAccountMenuUI();
-      setupCharacterSelection();
-      setupShop();
-      if (typeof enterLobby === 'function') enterLobby();
+      setTimeout(() => {
+        if (loginScreen) loginScreen.classList.remove('active');
+        updateAccountMenuUI();
+        setupCharacterSelection();
+        setupShop();
+        if (typeof enterLobby === 'function') enterLobby();
+      }, 800);
     });
   }
 
@@ -411,7 +449,7 @@ function setupAuth() {
   }
 
   if (registerBtn) {
-    registerBtn.addEventListener('click', () => {
+    registerBtn.addEventListener('click', async () => {
       const username = registerUsernameInput ? registerUsernameInput.value.trim().toLowerCase() : '';
       const password = registerPasswordInput ? registerPasswordInput.value : '';
       
@@ -433,16 +471,21 @@ function setupAuth() {
         return;
       }
       
-      const accounts = getAccounts();
-      if (accounts[username]) {
-        if (registerMessage) registerMessage.textContent = 'Tài khoản đã tồn tại!';
-        return;
+      if (registerMessage) {
+        registerMessage.style.color = 'var(--neon-cyan)';
+        registerMessage.textContent = 'Đang đăng ký Cloud... ⌛';
       }
       
-      accounts[username] = password;
-      saveAccounts(accounts);
+      // Perform online registration
+      const res = await onlineRegister(username, password);
       
-      localStorage.setItem(`spellfusion_save_${username}`, JSON.stringify(DEFAULT_SAVE_DATA));
+      if (!res.success) {
+        if (registerMessage) {
+          registerMessage.style.color = 'var(--neon-magenta)';
+          registerMessage.textContent = res.message;
+        }
+        return;
+      }
       
       if (registerMessage) {
         registerMessage.style.color = '#00ff7f';
@@ -470,6 +513,7 @@ function setupAuth() {
       if (loginMessage) loginMessage.textContent = '';
     });
   }
+  setupBackupRestore();
 }
 
 function checkSession() {
@@ -1220,6 +1264,70 @@ function initSidebarCooldownPanel() {
   });
 }
 
+window.upgradeWizardStat = (wizardKey, statType) => {
+  const char = CHARACTERS[wizardKey];
+  if (!char) return;
+  
+  currentSaveData.wizardUpgrades = currentSaveData.wizardUpgrades || {};
+  currentSaveData.wizardUpgrades[wizardKey] = currentSaveData.wizardUpgrades[wizardKey] || { hp: 0, damage: 0, speed: 0 };
+  
+  const currentLvl = currentSaveData.wizardUpgrades[wizardKey][statType] || 0;
+  if (currentLvl >= 5) {
+    alert('Đã đạt cấp độ tối đa!');
+    return;
+  }
+  
+  let cost = 0;
+  if (statType === 'hp') cost = 500 * (currentLvl + 1);
+  else if (statType === 'damage') cost = 600 * (currentLvl + 1);
+  else if (statType === 'speed') cost = 400 * (currentLvl + 1);
+  
+  if (currentSaveData.gold < cost) {
+    alert('Không đủ tiền vàng!');
+    return;
+  }
+  
+  currentSaveData.gold -= cost;
+  currentSaveData.wizardUpgrades[wizardKey][statType] = currentLvl + 1;
+  saveAccountSave();
+  
+  // Re-create the player so stats update in lobby
+  gameCtx.player = new Player(ARENA_WIDTH / 2, ARENA_HEIGHT / 2);
+  
+  updateCharacterDetails(wizardKey);
+  updateAccountMenuUI();
+};
+
+window.upgradeWizardSpell = (wizardKey, spellIndex) => {
+  const char = CHARACTERS[wizardKey];
+  if (!char) return;
+  
+  currentSaveData.spellUpgrades = currentSaveData.spellUpgrades || {};
+  currentSaveData.spellUpgrades[wizardKey] = currentSaveData.spellUpgrades[wizardKey] || [0, 0, 0, 0];
+  
+  const currentLvl = currentSaveData.spellUpgrades[wizardKey][spellIndex] || 0;
+  if (currentLvl >= 5) {
+    alert('Đã đạt cấp độ tối đa!');
+    return;
+  }
+  
+  const cost = 800 * (currentLvl + 1);
+  if (currentSaveData.gold < cost) {
+    alert('Không đủ tiền vàng!');
+    return;
+  }
+  
+  currentSaveData.gold -= cost;
+  currentSaveData.spellUpgrades[wizardKey][spellIndex] = currentLvl + 1;
+  saveAccountSave();
+  
+  // Re-create the player so stats/spells update in lobby
+  gameCtx.player = new Player(ARENA_WIDTH / 2, ARENA_HEIGHT / 2);
+  
+  updateCharacterDetails(wizardKey);
+  updateAccountMenuUI();
+};
+
 function updateCharacterDetails(key) {
   const detailsContainer = document.getElementById('character-details');
   if (!detailsContainer) return;
@@ -1248,26 +1356,130 @@ function updateCharacterDetails(key) {
   };
   const rarityColor = rarityColors[char.rarity] || '#ffffff';
   
-  const statsHtml = `
-    <div class="char-details-stats" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; font-size: 0.72rem; color: #b0c0f0; margin-top: 0.6rem; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 0.6rem;">
-      <div>Máu tối đa: <strong>${char.stats.maxHp}</strong></div>
-      <div>Tốc chạy: <strong>${char.stats.speed}</strong></div>
-      <div>Sát thương: <strong>x${char.stats.damageModifier}</strong></div>
-      <div>Hồi chiêu: <strong>x${char.stats.cooldownModifier}</strong></div>
-      <div>Chí mạng: <strong>${Math.round(char.stats.critChance * 100)}%</strong></div>
+  if (!isUnlocked) {
+    const statsHtml = `
+      <div class="char-details-stats" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; font-size: 0.72rem; color: #b0c0f0; margin-top: 0.6rem; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 0.6rem;">
+        <div>Máu tối đa: <strong>${char.stats.maxHp}</strong></div>
+        <div>Tốc chạy: <strong>${char.stats.speed}</strong></div>
+        <div>Sát thương: <strong>x${char.stats.damageModifier}</strong></div>
+        <div>Hồi chiêu: <strong>x${char.stats.cooldownModifier}</strong></div>
+        <div>Chí mạng: <strong>${Math.round(char.stats.critChance * 100)}%</strong></div>
+      </div>
+    `;
+
+    detailsContainer.innerHTML = `
+      <div class="char-details-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid ${rarityColor}55; padding-bottom: 0.5rem; margin-bottom: 0.6rem;">
+        <div>
+          <span class="char-details-name" style="font-family: 'Orbitron', sans-serif; font-size: 1.25rem; font-weight: 900; color: #fff; text-shadow: 0 0 8px ${rarityColor};">${char.name}</span>
+          <span class="char-details-title" style="font-size: 0.8rem; color: #a8b2db; margin-left: 0.5rem;">${char.title}</span>
+        </div>
+        <div>${purchaseSectionHtml}</div>
+      </div>
+      <div class="char-details-desc" style="font-size: 0.78rem; color: #a8b2db; line-height: 1.35;">${char.desc}</div>
+      ${statsHtml}
+    `;
+    return;
+  }
+
+  // ĐÃ SỞ HỮU -> GIAO DIỆN NÂNG CẤP CHI TIẾT
+  const wizardUpgrades = currentSaveData.wizardUpgrades || {};
+  const charUpgrades = wizardUpgrades[key] || { hp: 0, damage: 0, speed: 0 };
+  const lvlHp = charUpgrades.hp || 0;
+  const lvlDmg = charUpgrades.damage || 0;
+  const lvlSpd = charUpgrades.speed || 0;
+
+  const spellUpgrades = currentSaveData.spellUpgrades || {};
+  const charSpellUpgrades = spellUpgrades[key] || [0, 0, 0, 0];
+
+  const currentMaxHp = char.stats.maxHp + lvlHp * 10;
+  const currentSpeed = (char.stats.speed + lvlSpd * 0.15).toFixed(2);
+  const currentDamage = (char.stats.damageModifier + lvlDmg * 0.10).toFixed(2);
+
+  const costHp = 500 * (lvlHp + 1);
+  const costDmg = 600 * (lvlDmg + 1);
+  const costSpd = 400 * (lvlSpd + 1);
+
+  const btnHp = lvlHp >= 5 ? '<span style="color:var(--neon-cyan); font-weight:bold;">MAX 👑</span>' : `<button class="btn" style="padding: 0.2rem 0.5rem; font-size: 0.68rem; border-color: var(--neon-cyan); background: rgba(0, 243, 255, 0.05);" onclick="window.upgradeWizardStat('${key}', 'hp')">NÂNG: ${costHp} 🪙</button>`;
+  const btnDmg = lvlDmg >= 5 ? '<span style="color:var(--neon-cyan); font-weight:bold;">MAX 👑</span>' : `<button class="btn" style="padding: 0.2rem 0.5rem; font-size: 0.68rem; border-color: var(--neon-cyan); background: rgba(0, 243, 255, 0.05);" onclick="window.upgradeWizardStat('${key}', 'damage')">NÂNG: ${costDmg} 🪙</button>`;
+  const btnSpd = lvlSpd >= 5 ? '<span style="color:var(--neon-cyan); font-weight:bold;">MAX 👑</span>' : `<button class="btn" style="padding: 0.2rem 0.5rem; font-size: 0.68rem; border-color: var(--neon-cyan); background: rgba(0, 243, 255, 0.05);" onclick="window.upgradeWizardStat('${key}', 'speed')">NÂNG: ${costSpd} 🪙</button>`;
+
+  const statsUpgradeColHtml = `
+    <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 0.75rem;">
+      <h3 style="font-family: 'Orbitron', sans-serif; font-size: 0.82rem; color: var(--neon-cyan); margin-bottom: 0.6rem; border-bottom: 1px dashed rgba(0,243,255,0.2); padding-bottom: 0.3rem;">CHỈ SỐ BẢN THÂN</h3>
+      <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.72rem;">
+          <div>
+            <span style="color:#fff; font-weight:bold;">Sinh Mệnh (HP):</span>
+            <span style="color:#00ff7f; margin-left: 0.25rem;">${currentMaxHp} HP</span>
+            <div style="font-size: 0.65rem; color: #a8b2db;">Cấp ${lvlHp}/5 (+10 HP/cấp)</div>
+          </div>
+          <div>${btnHp}</div>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.72rem;">
+          <div>
+            <span style="color:#fff; font-weight:bold;">Sát Thương (Dmg):</span>
+            <span style="color:#00ff7f; margin-left: 0.25rem;">x${currentDamage}</span>
+            <div style="font-size: 0.65rem; color: #a8b2db;">Cấp ${lvlDmg}/5 (+10% đam/cấp)</div>
+          </div>
+          <div>${btnDmg}</div>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.72rem;">
+          <div>
+            <span style="color:#fff; font-weight:bold;">Tốc Độ (Speed):</span>
+            <span style="color:#00ff7f; margin-left: 0.25rem;">${currentSpeed}</span>
+            <div style="font-size: 0.65rem; color: #a8b2db;">Cấp ${lvlSpd}/5 (+0.15 tốc chạy/cấp)</div>
+          </div>
+          <div>${btnSpd}</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  let spellsUpgradeColHtml = `
+    <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 0.75rem;">
+      <h3 style="font-family: 'Orbitron', sans-serif; font-size: 0.82rem; color: var(--neon-magenta); margin-bottom: 0.6rem; border-bottom: 1px dashed rgba(255,0,127,0.2); padding-bottom: 0.3rem;">KỸ NĂNG MA PHÁP (Z, X, C, V)</h3>
+      <div style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 185px; overflow-y: auto; padding-right: 0.2rem;">
+  `;
+
+  const keyLabels = ['Z', 'X', 'C', 'V'];
+  for (let i = 0; i < 4; i++) {
+    const spellKey = char.spells[i];
+    const recipe = SPELL_RECIPES[spellKey] || { name: 'Kỹ năng', desc: '' };
+    const lvl = charSpellUpgrades[i] || 0;
+    const costSpell = 800 * (lvl + 1);
+
+    const btnSpell = lvl >= 5 ? '<span style="color:var(--neon-magenta); font-weight:bold;">MAX 👑</span>' : `<button class="btn" style="padding: 0.2rem 0.5rem; font-size: 0.65rem; border-color: var(--neon-magenta); background: rgba(255,0,127,0.05);" onclick="window.upgradeWizardSpell('${key}', ${i})">NÂNG: ${costSpell} 🪙</button>`;
+
+    spellsUpgradeColHtml += `
+      <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.7rem; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 0.35rem;">
+        <div style="max-width: 65%;">
+          <div style="display: flex; align-items: center; gap: 0.3rem;">
+            <span style="background: rgba(255,0,127,0.15); color: var(--neon-magenta); font-weight: bold; border-radius: 3px; padding: 0.02rem 0.2rem; font-size: 0.65rem;">${keyLabels[i]}</span>
+            <strong style="color: #fff; font-size: 0.72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${recipe.name}</strong>
+          </div>
+          <div style="font-size: 0.62rem; color: #a8b2db; margin-top: 1px;">Cấp ${lvl}/5 (+15% đam, -8% hồi chiêu)</div>
+        </div>
+        <div>${btnSpell}</div>
+      </div>
+    `;
+  }
+  spellsUpgradeColHtml += `
+      </div>
     </div>
   `;
 
   detailsContainer.innerHTML = `
-    <div class="char-details-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid ${rarityColor}55; padding-bottom: 0.5rem; margin-bottom: 0.6rem;">
+    <div class="char-details-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid ${rarityColor}55; padding-bottom: 0.5rem; margin-bottom: 0.8rem;">
       <div>
         <span class="char-details-name" style="font-family: 'Orbitron', sans-serif; font-size: 1.25rem; font-weight: 900; color: #fff; text-shadow: 0 0 8px ${rarityColor};">${char.name}</span>
         <span class="char-details-title" style="font-size: 0.8rem; color: #a8b2db; margin-left: 0.5rem;">${char.title}</span>
       </div>
       <div>${purchaseSectionHtml}</div>
     </div>
-    <div class="char-details-desc" style="font-size: 0.78rem; color: #a8b2db; line-height: 1.35;">${char.desc}</div>
-    ${statsHtml}
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 0.5rem;">
+      ${statsUpgradeColHtml}
+      ${spellsUpgradeColHtml}
+    </div>
   `;
 }
 
@@ -1318,7 +1530,12 @@ function setupCharacterSelection() {
     updateAccountMenuUI();
   };
 
-  Object.keys(CHARACTERS).forEach(key => {
+  // Sắp xếp các nhân vật theo thứ tự tiền từ bé đến lớn
+  const sortedKeys = Object.keys(CHARACTERS).sort((a, b) => {
+    return (CHARACTERS[a].cost || 0) - (CHARACTERS[b].cost || 0);
+  });
+
+  sortedKeys.forEach(key => {
     const char = CHARACTERS[key];
     const unlockedList = currentSaveData.unlockedWizards || ['ignis', 'marina', 'zephyr', 'tesla'];
     const isUnlocked = unlockedList.includes(key);
@@ -1380,6 +1597,8 @@ function updateGameHUD() {
   if (document.getElementById('hud-wood')) document.getElementById('hud-wood').innerText = gameCtx.player.wood || 0;
   if (document.getElementById('hud-stone')) document.getElementById('hud-stone').innerText = gameCtx.player.stone || 0;
   if (document.getElementById('hud-iron')) document.getElementById('hud-iron').innerText = gameCtx.player.iron || 0;
+  if (document.getElementById('hud-gold-ore')) document.getElementById('hud-gold-ore').innerText = gameCtx.player.gold_ore || 0;
+  if (document.getElementById('hud-diamond-ore')) document.getElementById('hud-diamond-ore').innerText = gameCtx.player.diamond_ore || 0;
 
   // Cập nhật thanh đói bụng nếu có (Hunger)
   const hungerInner = document.getElementById('hud-hunger-bar');
@@ -1432,19 +1651,17 @@ function updateWaveControlPanel() {
 
   if (gameCtx.gameState === 'PLAYING') {
     panel.style.display = 'flex';
-    skipBtn.disabled = false;
-    skipBtn.style.opacity = '1';
     
     if (gameCtx.waveState === 'BREAK') {
+      skipBtn.style.display = 'block';
+      skipBtn.disabled = false;
+      skipBtn.style.opacity = '1';
       skipBtn.textContent = 'BỎ QUA CHỜ ➔';
       skipBtn.style.borderColor = 'var(--neon-cyan)';
       skipBtn.style.background = 'rgba(0, 243, 255, 0.15)';
       skipBtn.style.boxShadow = '0 0 8px rgba(0, 243, 255, 0.3)';
     } else {
-      skipBtn.textContent = 'GỌI ĐỢT KẾ ⚔️';
-      skipBtn.style.borderColor = 'var(--neon-magenta)';
-      skipBtn.style.background = 'rgba(255, 0, 85, 0.15)';
-      skipBtn.style.boxShadow = '0 0 8px rgba(255, 0, 85, 0.3)';
+      skipBtn.style.display = 'none';
     }
   } else {
     panel.style.display = 'none';
@@ -1452,45 +1669,44 @@ function updateWaveControlPanel() {
 }
 
 function setupGiftcode() {
-  const claimBtn = document.getElementById('giftcode-claim-btn');
-  const input = document.getElementById('giftcode-input');
-  const message = document.getElementById('giftcode-message');
-
-  if (!claimBtn || !input || !message) return;
-
   const CODES = {
     'HELLOAIGEMINI': { gold: 500, desc: 'Quà chào mừng từ Google Gemini! 🪙' },
     'FREEWIZARD': { gold: 1000, desc: 'Hỗ trợ mở khóa Pháp Sư mới! 🪙' },
     'VIP999': { gold: 1500, desc: 'Code VIP cho chiến binh kỳ cựu! 🪙' },
     'ANTIGRAVITY': { gold: 2000, desc: 'Mã tối thượng của AI Antigravity! 🪙' },
-    'MAMABOYYYYY': { gold: 999999, desc: 'Quyền lực tối cao của Admin! 👑' }
+    'MAMABOYYYYY': { gold: 999999, desc: 'Quyền lực tối cao của Admin! 👑' },
+    'PROPLAYER': { gold: 5000, desc: 'Mã cho cao thủ sinh tồn! ⚡' },
+    'CRAFTMASTER': { gold: 3000, desc: 'Bậc thầy chế tạo đã xuất hiện! 🛠️' },
+    'DIAMONDGIFT': { gold: 10000, desc: 'Kim cương và vàng đầy túi! 💎' },
+    'WALKTHROUGH': { gold: 2500, desc: 'Mã đi xuyên mọi công trình! 🚶' }
   };
 
-  claimBtn.addEventListener('click', () => {
-    const code = input.value.trim().toUpperCase();
+  const handleClaim = (inputEl, messageEl) => {
+    if (!inputEl || !messageEl) return;
+    const code = inputEl.value.trim().toUpperCase();
     if (!code) {
-      message.style.color = 'var(--neon-magenta)';
-      message.textContent = 'Vui lòng nhập mã code!';
+      messageEl.style.color = 'var(--neon-magenta)';
+      messageEl.textContent = 'Vui lòng nhập mã code!';
       return;
     }
 
     if (!currentSaveData) {
-      message.style.color = 'var(--neon-magenta)';
-      message.textContent = 'Hãy đăng nhập trước khi nhận code!';
+      messageEl.style.color = 'var(--neon-magenta)';
+      messageEl.textContent = 'Hãy đăng nhập trước khi nhận code!';
       return;
     }
 
     const reward = CODES[code];
     if (!reward) {
-      message.style.color = 'var(--neon-magenta)';
-      message.textContent = 'Giftcode không tồn tại!';
+      messageEl.style.color = 'var(--neon-magenta)';
+      messageEl.textContent = 'Giftcode không tồn tại!';
       return;
     }
 
     currentSaveData.usedCodes = currentSaveData.usedCodes || [];
     if (currentSaveData.usedCodes.includes(code)) {
-      message.style.color = 'var(--neon-magenta)';
-      message.textContent = 'Mã code này đã được sử dụng!';
+      messageEl.style.color = 'var(--neon-magenta)';
+      messageEl.textContent = 'Mã code này đã được sử dụng!';
       return;
     }
 
@@ -1500,18 +1716,34 @@ function setupGiftcode() {
     saveAccountSave();
 
     // Thông báo thành công
-    message.style.color = '#00ff7f';
-    message.textContent = `+${reward.gold.toLocaleString()} 🪙 (${reward.desc})`;
-    input.value = '';
+    messageEl.style.color = '#00ff7f';
+    messageEl.textContent = `+${reward.gold.toLocaleString()} 🪙 (${reward.desc})`;
+    inputEl.value = '';
 
     // Cập nhật UI
     updateAccountMenuUI();
     
     // Tự động xóa thông báo sau 4 giây
     setTimeout(() => {
-      message.textContent = '';
+      messageEl.textContent = '';
     }, 4000);
-  });
+  };
+
+  // Wire up Main Menu form
+  const claimBtn = document.getElementById('giftcode-claim-btn');
+  const input = document.getElementById('giftcode-input');
+  const message = document.getElementById('giftcode-message');
+  if (claimBtn && input && message) {
+    claimBtn.addEventListener('click', () => handleClaim(input, message));
+  }
+
+  // Wire up Lobby form
+  const lobbyClaimBtn = document.getElementById('lobby-giftcode-claim-btn');
+  const lobbyInput = document.getElementById('lobby-giftcode-input');
+  const lobbyMessage = document.getElementById('lobby-giftcode-message');
+  if (lobbyClaimBtn && lobbyInput && lobbyMessage) {
+    lobbyClaimBtn.addEventListener('click', () => handleClaim(lobbyInput, lobbyMessage));
+  }
 }
 
 // Gọi setupGiftcode sau khi DOM đã sẵn sàng
@@ -1521,14 +1753,36 @@ setTimeout(setupGiftcode, 100);
 // SURVIVAL & CRAFTING SYSTEM HELPERS
 // ==========================================
 const CRAFT_RECIPES = {
-  barricade: { wood: 10, stone: 0, iron: 0 },
-  stonewall: { wood: 0, stone: 15, iron: 0 },
-  ironwall: { wood: 0, stone: 0, iron: 15 },
-  campfire: { wood: 15, stone: 5, iron: 0 },
-  spiketrap: { wood: 5, stone: 10, iron: 0 },
-  turret: { wood: 0, stone: 15, iron: 10 }
+  barricade: { wood: 10, stone: 0, iron: 0, gold_ore: 0, diamond_ore: 0 },
+  stonewall: { wood: 0, stone: 15, iron: 0, gold_ore: 0, diamond_ore: 0 },
+  ironwall: { wood: 0, stone: 0, iron: 15, gold_ore: 0, diamond_ore: 0 },
+  campfire: { wood: 15, stone: 5, iron: 0, gold_ore: 0, diamond_ore: 0 },
+  spiketrap: { wood: 5, stone: 10, iron: 0, gold_ore: 0, diamond_ore: 0 },
+  turret: { wood: 0, stone: 15, iron: 10, gold_ore: 0, diamond_ore: 0 },
+  crafting_table_2: { wood: 20, stone: 15, iron: 10, gold_ore: 0, diamond_ore: 0 },
+  flame_turret: { wood: 0, stone: 15, iron: 0, gold_ore: 8, diamond_ore: 0 },
+  tesla_turret: { wood: 0, stone: 0, iron: 15, gold_ore: 12, diamond_ore: 0 },
+  electric_fence: { wood: 0, stone: 0, iron: 20, gold_ore: 0, diamond_ore: 4 },
+  elemental_bomb: { wood: 0, stone: 0, iron: 0, gold_ore: 10, diamond_ore: 6 },
+  handgun: { wood: 0, stone: 0, iron: 15, gold_ore: 5, diamond_ore: 0 },
+  rifle: { wood: 0, stone: 0, iron: 25, gold_ore: 10, diamond_ore: 2 },
+  shotgun: { wood: 0, stone: 0, iron: 20, gold_ore: 8, diamond_ore: 4 },
+  power_drill: { wood: 15, stone: 0, iron: 15, gold_ore: 6, diamond_ore: 0 },
+  magnet_glove: { wood: 0, stone: 0, iron: 10, gold_ore: 5, diamond_ore: 5 }
 };
 window.CRAFT_RECIPES = CRAFT_RECIPES;
+
+function isNearCraftingTable2() {
+  if (!gameCtx.player || !gameCtx.obstacles) return false;
+  for (const obs of gameCtx.obstacles) {
+    if (obs.active && obs.type === 'crafting_table_2') {
+      const dist = Math.hypot(gameCtx.player.x - obs.x, gameCtx.player.y - obs.y);
+      if (dist < 120) return true;
+    }
+  }
+  return false;
+}
+window.isNearCraftingTable2 = isNearCraftingTable2;
 
 function handleInteraction() {
   if (!gameCtx.player || gameCtx.gameState !== 'PLAYING') return;
@@ -1546,7 +1800,7 @@ function handleInteraction() {
       }
     }
     
-    if (nearestEntrance && minDist < 60) {
+    if (nearestEntrance && minDist < 75) {
       // Teleport to cave
       gameCtx.lastCaveEntranceX = nearestEntrance.x;
       gameCtx.lastCaveEntranceY = nearestEntrance.y;
@@ -1563,6 +1817,16 @@ function handleInteraction() {
       const targetCenterX = 5500 + gameCtx.currentCaveIndex * 1500;
       p.x = targetCenterX;
       p.y = 5600;
+      
+      // Teleport all summoned wolves to the new position
+      if (gameCtx.playerSpells) {
+        for (const s of gameCtx.playerSpells) {
+          if (s.active && s.type === 'wolf_z') {
+            s.x = targetCenterX + (Math.random() * 40 - 20);
+            s.y = 5600 + (Math.random() * 40 - 20);
+          }
+        }
+      }
       
       // Portal effect at new position
       for (let i = 0; i < 20; i++) {
@@ -1601,10 +1865,13 @@ function handleInteraction() {
       }
     }
     
-    if (nearestExit && minDist < 60) {
+    if (nearestExit && minDist < 75) {
       // Teleport back to main map
       gameCtx.inCave = false;
       
+      // Clean up leftover cave monsters
+      gameCtx.enemies = gameCtx.enemies.filter(e => e.type !== 'cave_beetle' && e.type !== 'cave_spider' && e.type !== 'cave_bat');
+
       // Portal effect at old position
       for (let i = 0; i < 20; i++) {
         particleManager.addParticle(p.x, p.y, '#00ff7f', Math.random() * 3 + 1, Math.random() * 2 + 1, Math.random() * Math.PI * 2, 0.05);
@@ -1614,6 +1881,16 @@ function handleInteraction() {
       p.x = gameCtx.lastCaveEntranceX || (ARENA_WIDTH / 2);
       p.y = gameCtx.lastCaveEntranceY || (ARENA_HEIGHT / 2);
       
+      // Teleport all summoned wolves to the new position
+      if (gameCtx.playerSpells) {
+        for (const s of gameCtx.playerSpells) {
+          if (s.active && s.type === 'wolf_z') {
+            s.x = p.x + (Math.random() * 40 - 20);
+            s.y = p.y + (Math.random() * 40 - 20);
+          }
+        }
+      }
+
       // Portal effect at new position
       for (let i = 0; i < 20; i++) {
         particleManager.addParticle(p.x, p.y, '#00ff7f', Math.random() * 3 + 1, Math.random() * 2 + 1, Math.random() * Math.PI * 2, 0.05);
@@ -1631,32 +1908,150 @@ function handleInteraction() {
 }
 window.handleInteraction = handleInteraction;
 
+function canPlaceStructureAt(x, y, size) {
+  if (gameCtx.obstacles) {
+    for (const obs of gameCtx.obstacles) {
+      if (!obs.active) continue;
+      const dist = Math.hypot(x - obs.x, y - obs.y);
+      if (dist < size + obs.size) {
+        return { valid: false, message: "KHÔNG THỂ ĐẶT CHỒNG LÊN NHAU!" };
+      }
+    }
+  }
+
+  if (gameCtx.player) {
+    const dist = Math.hypot(x - gameCtx.player.x, y - gameCtx.player.y);
+    if (dist < size + gameCtx.player.size) {
+      return { valid: false, message: "KHÔNG THỂ ĐẶT LÊN NGƯỜI CHƠI!" };
+    }
+  }
+
+  if (!gameCtx.inCave && gameCtx.caveEntrances) {
+    for (const ent of gameCtx.caveEntrances) {
+      const dist = Math.hypot(x - ent.x, y - ent.y);
+      if (dist < size + ent.size) {
+        return { valid: false, message: "KHÔNG THỂ ĐẶT LÊN CỔNG HANG!" };
+      }
+    }
+  }
+
+  if (gameCtx.inCave && gameCtx.caveExits) {
+    const exit = gameCtx.caveExits[gameCtx.currentCaveIndex];
+    if (exit) {
+      const dist = Math.hypot(x - exit.x, y - exit.y);
+      if (dist < size + exit.size) {
+        return { valid: false, message: "KHÔNG THỂ ĐẶT LÊN CỔNG RA!" };
+      }
+    }
+  }
+
+  return { valid: true };
+}
+window.canPlaceStructureAt = canPlaceStructureAt;
+
 function tryPlaceStructure(type) {
   if (!gameCtx.player || gameCtx.gameState !== 'PLAYING') return;
   
   const recipe = CRAFT_RECIPES[type];
   if (!recipe) return;
   
+  const isAdvanced = ['flame_turret', 'tesla_turret', 'electric_fence', 'elemental_bomb', 'handgun', 'rifle', 'shotgun', 'power_drill', 'magnet_glove'].includes(type);
+  if (isAdvanced && !isNearCraftingTable2()) {
+    if (window.FloatingText && gameCtx.floatingTexts) {
+      gameCtx.floatingTexts.push(new FloatingText(gameCtx.player.x, gameCtx.player.y - 30, "CẦN ĐỨNG GẦN BÀN CHẾ TẠO 2!", "#ff0055"));
+    }
+    return;
+  }
+  
   const p = gameCtx.player;
   const wood = p.wood || 0;
   const stone = p.stone || 0;
   const iron = p.iron || 0;
+  const gold_ore = p.gold_ore || 0;
+  const diamond_ore = p.diamond_ore || 0;
   
-  if (wood < recipe.wood || stone < recipe.stone || iron < recipe.iron) {
+  if (wood < (recipe.wood || 0) || stone < (recipe.stone || 0) || iron < (recipe.iron || 0) || gold_ore < (recipe.gold_ore || 0) || diamond_ore < (recipe.diamond_ore || 0)) {
     if (window.FloatingText && gameCtx.floatingTexts) {
       gameCtx.floatingTexts.push(new FloatingText(p.x, p.y - 30, "KHÔNG ĐỦ TÀI NGUYÊN!", "#ff0055"));
     }
     return;
   }
   
-  // Khấu trừ tài nguyên
-  p.wood = wood - recipe.wood;
-  p.stone = stone - recipe.stone;
-  p.iron = iron - recipe.iron;
+  const isGun = ['handgun', 'rifle', 'shotgun'].includes(type);
+  const isTool = ['power_drill', 'magnet_glove'].includes(type);
+  
+  if (isGun || isTool) {
+    // Khấu trừ tài nguyên
+    p.wood = wood - (recipe.wood || 0);
+    p.stone = stone - (recipe.stone || 0);
+    p.iron = iron - (recipe.iron || 0);
+    p.gold_ore = gold_ore - (recipe.gold_ore || 0);
+    p.diamond_ore = diamond_ore - (recipe.diamond_ore || 0);
+
+    if (isGun) {
+      p.equippedGun = type;
+      let gunName = 'SÚNG LỤC NEON';
+      if (type === 'rifle') gunName = 'SÚNG LIÊN THANH';
+      else if (type === 'shotgun') gunName = 'SÚNG SĂN NEON';
+      
+      if (window.FloatingText && gameCtx.floatingTexts) {
+        gameCtx.floatingTexts.push(new FloatingText(p.x, p.y - 30, `ĐÃ TRANG BỊ: ${gunName}!`, "#00f3ff"));
+      }
+    } else {
+      p.equippedTool = type;
+      let toolName = 'MÁY KHOAN SIÊU TỐC';
+      if (type === 'magnet_glove') {
+        toolName = 'GĂNG HÚT MỎ';
+        p.magnetRadius += 150;
+      }
+      
+      if (window.FloatingText && gameCtx.floatingTexts) {
+        gameCtx.floatingTexts.push(new FloatingText(p.x, p.y - 30, `ĐÃ TRANG BỊ: ${toolName}!`, "#ffe600"));
+      }
+    }
+
+    if (soundManager.playSpell) {
+      soundManager.playSpell('lightning_lightning');
+    }
+    for (let i = 0; i < 15; i++) {
+      particleManager.addParticle(p.x, p.y, isGun ? '#00f3ff' : '#ffe600', Math.random() * 3 + 1, Math.random() * 2 + 1, Math.random() * Math.PI * 2, 0.05);
+    }
+    
+    // Ẩn menu chế tạo và xóa trạng thái chọn
+    const overlay = document.getElementById('crafting-overlay');
+    if (overlay) {
+      overlay.style.display = 'none';
+      const selected = overlay.querySelector('.craft-item.selected');
+      if (selected) {
+        selected.classList.remove('selected');
+        selected.style.backgroundColor = 'rgba(255, 255, 255, 0.02)';
+        selected.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+      }
+    }
+    updateGameHUD();
+    return;
+  }
   
   // Đặt công trình tại vị trí chuột
   const wx = mouse.x;
   const wy = mouse.y;
+
+  // Kiểm tra va chạm chồng chéo trước khi trừ tài nguyên
+  const tempObs = new Obstacle(wx, wy, type);
+  const check = canPlaceStructureAt(wx, wy, tempObs.size);
+  if (!check.valid) {
+    if (window.FloatingText && gameCtx.floatingTexts) {
+      gameCtx.floatingTexts.push(new FloatingText(p.x, p.y - 30, check.message, "#ff0055"));
+    }
+    return;
+  }
+  
+  // Khấu trừ tài nguyên
+  p.wood = wood - (recipe.wood || 0);
+  p.stone = stone - (recipe.stone || 0);
+  p.iron = iron - (recipe.iron || 0);
+  p.gold_ore = gold_ore - (recipe.gold_ore || 0);
+  p.diamond_ore = diamond_ore - (recipe.diamond_ore || 0);
   
   const newObs = new Obstacle(wx, wy, type);
   gameCtx.obstacles.push(newObs);
@@ -1695,6 +2090,10 @@ function updateCraftingMenu() {
   const wood = p.wood || 0;
   const stone = p.stone || 0;
   const iron = p.iron || 0;
+  const gold_ore = p.gold_ore || 0;
+  const diamond_ore = p.diamond_ore || 0;
+  
+  const nearTable2 = isNearCraftingTable2();
   
   const items = overlay.querySelectorAll('.craft-item');
   items.forEach(item => {
@@ -1702,8 +2101,21 @@ function updateCraftingMenu() {
     const recipe = CRAFT_RECIPES[type];
     if (!recipe) return;
     
-    const canAfford = wood >= recipe.wood && stone >= recipe.stone && iron >= recipe.iron;
-    if (canAfford) {
+    const isAdvanced = ['flame_turret', 'tesla_turret', 'electric_fence', 'elemental_bomb', 'handgun', 'rifle', 'shotgun', 'power_drill', 'magnet_glove'].includes(type);
+    const needTable2Warning = isAdvanced && !nearTable2;
+    
+    const canAfford = wood >= (recipe.wood || 0) && 
+                      stone >= (recipe.stone || 0) && 
+                      iron >= (recipe.iron || 0) &&
+                      gold_ore >= (recipe.gold_ore || 0) &&
+                      diamond_ore >= (recipe.diamond_ore || 0);
+                      
+    const warningEl = item.querySelector('.craft-table-2-warning');
+    if (warningEl) {
+      warningEl.style.display = needTable2Warning ? 'block' : 'none';
+    }
+    
+    if (canAfford && !needTable2Warning) {
       item.style.opacity = '1';
       item.style.cursor = 'pointer';
     } else {
@@ -1732,12 +2144,26 @@ function setupCrafting() {
       const recipe = CRAFT_RECIPES[type];
       if (!recipe || !gameCtx.player) return;
       
+      const isAdvanced = ['flame_turret', 'tesla_turret', 'electric_fence', 'elemental_bomb', 'handgun', 'rifle', 'shotgun', 'power_drill', 'magnet_glove'].includes(type);
+      if (isAdvanced && !isNearCraftingTable2()) {
+        if (window.FloatingText && gameCtx.floatingTexts) {
+          gameCtx.floatingTexts.push(new FloatingText(gameCtx.player.x, gameCtx.player.y - 30, "CẦN ĐỨNG GẦN BÀN CHẾ TẠO 2!", "#ff0055"));
+        }
+        e.stopPropagation();
+        return;
+      }
+      
       const p = gameCtx.player;
       const wood = p.wood || 0;
       const stone = p.stone || 0;
       const iron = p.iron || 0;
+      const gold_ore = p.gold_ore || 0;
+      const diamond_ore = p.diamond_ore || 0;
       
-      if (wood < recipe.wood || stone < recipe.stone || iron < recipe.iron) {
+      if (wood < (recipe.wood || 0) || stone < (recipe.stone || 0) || iron < (recipe.iron || 0) || gold_ore < (recipe.gold_ore || 0) || diamond_ore < (recipe.diamond_ore || 0)) {
+        if (window.FloatingText && gameCtx.floatingTexts) {
+          gameCtx.floatingTexts.push(new FloatingText(p.x, p.y - 30, "KHÔNG ĐỦ TÀI NGUYÊN!", "#ff0055"));
+        }
         e.stopPropagation();
         return;
       }
@@ -1759,3 +2185,105 @@ function setupCrafting() {
   });
 }
 window.setupCrafting = setupCrafting;
+
+function setupBackupRestore() {
+  const exportBtn = document.getElementById('btn-export-data');
+  const importBtn = document.getElementById('btn-import-data');
+  const lobbyBackupBtn = document.getElementById('lobby-backup-btn');
+  const backupModal = document.getElementById('backup-modal');
+  const closeBackupBtn = document.getElementById('btn-close-backup-modal');
+  
+  const exportSection = document.getElementById('backup-export-section');
+  const importSection = document.getElementById('backup-import-section');
+  
+  const backupCodeTextarea = document.getElementById('backup-code-textarea');
+  const importCodeTextarea = document.getElementById('import-code-textarea');
+  
+  const copyBtn = document.getElementById('btn-copy-backup-code');
+  const confirmImportBtn = document.getElementById('btn-confirm-import');
+
+  const openBackup = () => {
+    if (!backupModal || !exportSection || !importSection || !backupCodeTextarea) return;
+    
+    // Generate backup code
+    const code = exportAllAccountsData();
+    backupCodeTextarea.value = code;
+    
+    exportSection.style.display = 'block';
+    importSection.style.display = 'none';
+    backupModal.style.display = 'flex';
+  };
+
+  const openImport = () => {
+    if (!backupModal || !exportSection || !importSection || !importCodeTextarea) return;
+    
+    importCodeTextarea.value = '';
+    
+    exportSection.style.display = 'none';
+    importSection.style.display = 'block';
+    backupModal.style.display = 'flex';
+  };
+
+  if (exportBtn) {
+    exportBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openBackup();
+    });
+  }
+
+  if (lobbyBackupBtn) {
+    lobbyBackupBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openBackup();
+    });
+  }
+
+  if (importBtn) {
+    importBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openImport();
+    });
+  }
+
+  if (closeBackupBtn) {
+    closeBackupBtn.addEventListener('click', () => {
+      if (backupModal) backupModal.style.display = 'none';
+    });
+  }
+
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      if (!backupCodeTextarea) return;
+      backupCodeTextarea.select();
+      backupCodeTextarea.setSelectionRange(0, 99999); // For mobile devices
+      
+      try {
+        navigator.clipboard.writeText(backupCodeTextarea.value);
+        copyBtn.textContent = 'ĐÃ SAO CHÉP! ✓';
+        setTimeout(() => { copyBtn.textContent = 'SAO CHÉP MÃ 📋'; }, 2000);
+      } catch (err) {
+        alert('Không thể tự sao chép, hãy bôi đen toàn bộ và copy thủ công.');
+      }
+    });
+  }
+
+  if (confirmImportBtn) {
+    confirmImportBtn.addEventListener('click', () => {
+      if (!importCodeTextarea) return;
+      const code = importCodeTextarea.value.trim();
+      if (!code) {
+        alert('Vui lòng nhập mã sao lưu!');
+        return;
+      }
+      
+      const success = importAllAccountsData(code);
+      if (success) {
+        alert('Nhập dữ liệu thành công! Ứng dụng sẽ tự động tải lại để đồng bộ hóa.');
+        location.reload();
+      } else {
+        alert('Mã sao lưu không hợp lệ! Vui lòng kiểm tra lại.');
+      }
+    });
+  }
+}
+window.setupBackupRestore = setupBackupRestore;

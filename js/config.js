@@ -94,7 +94,7 @@ const CHARACTERS = {
     startElement: 'frost',
     spells: ['frost_z', 'frost_x', 'frost_c', 'frost_v'],
     rarity: 'epic',
-    cost: 12000,
+    cost: 2000,
     stats: {
       maxHp: 110,
       speed: 3.3,
@@ -112,7 +112,7 @@ const CHARACTERS = {
     startElement: 'magma',
     spells: ['magma_z', 'magma_x', 'magma_c', 'magma_v'],
     rarity: 'epic',
-    cost: 14000,
+    cost: 5000,
     stats: {
       maxHp: 130,
       speed: 3.2,
@@ -347,6 +347,9 @@ const SPELL_RECIPES = {
   'venom_c': { name: 'Rắn Độc', desc: 'Triệu hồi rắn độc xuyên thấu mọi kẻ địch', cd: 300 },
   'venom_v': { name: 'Sương Độc', desc: 'Tỏa khí độc làm suy yếu và rút HP quái cực mạnh', cd: 600 },
 
+  'gun_handgun': { name: 'Súng Lục Neon', desc: 'Bắn tia đạn neon nhanh và mạnh', cd: 15 },
+  'gun_rifle': { name: 'Súng Liên Thanh', desc: 'Bắn liên tục tia đạn tầm trung', cd: 7 },
+  'gun_shotgun': { name: 'Súng Săn Neon', desc: 'Bắn chùm 5 tia đạn tỏa rộng', cd: 35 },
   'none': { name: 'Ma Pháp Sơ Cấp', desc: 'Bắn đạn ma pháp trắng cơ bản', cd: 25 }
 };
 
@@ -355,6 +358,9 @@ const SPELL_RECIPES = {
 // ==========================================
 function getSpellMaxRange(spellKey, player) {
   const recipes = {
+    'gun_handgun': { speed: 16, maxLife: 35 },
+    'gun_rifle': { speed: 20, maxLife: 35 },
+    'gun_shotgun': { speed: 14, maxLife: 22 },
     'ignis_z': { speed: 12, maxLife: 40 },
     'ignis_x': { speed: 8, maxLife: 80 },
     'ignis_c': { speed: 10, maxLife: 60 },
@@ -468,7 +474,16 @@ function getActualSpellCD(player, spellIndex) {
     baseCD = Math.max(12, baseCD - (lvl - 1) * (reductions[spellIndex] || 5));
   }
 
-  return Math.max(5, baseCD * player.cooldownModifier);
+  let cd = baseCD * player.cooldownModifier;
+
+  // Áp dụng giảm hồi chiêu từ nâng cấp chiêu thức vĩnh viễn ở sảnh chờ (-8% mỗi cấp)
+  const wizardKey = player.characterKey || 'ignis';
+  const spellUpgrades = currentSaveData.spellUpgrades || {};
+  const charSpellUpgrades = spellUpgrades[wizardKey] || [0, 0, 0, 0];
+  const permLvl = charSpellUpgrades[spellIndex] || 0;
+  cd *= (1 - permLvl * 0.08);
+
+  return Math.max(5, cd);
 }
 
 // Cấu hình Bản đồ (MAPS)

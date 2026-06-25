@@ -1,3 +1,84 @@
+function getSpellIndexAndCharKey(spellType) {
+  if (spellType.startsWith('ignis_')) {
+    const key = 'ignis';
+    if (spellType.includes('_z')) return { charKey: key, index: 0 };
+    if (spellType.includes('_x')) return { charKey: key, index: 1 };
+    if (spellType.includes('_c')) return { charKey: key, index: 2 };
+    if (spellType.includes('_v')) return { charKey: key, index: 3 };
+  }
+  if (spellType.startsWith('marina_')) {
+    const key = 'marina';
+    if (spellType.includes('_z')) return { charKey: key, index: 0 };
+    if (spellType.includes('_x')) return { charKey: key, index: 1 };
+    if (spellType.includes('_c')) return { charKey: key, index: 2 };
+    if (spellType.includes('_v')) return { charKey: key, index: 3 };
+  }
+  if (spellType.startsWith('zephyr_')) {
+    const key = 'zephyr';
+    if (spellType.includes('_z')) return { charKey: key, index: 0 };
+    if (spellType.includes('_x')) return { charKey: key, index: 1 };
+    if (spellType.includes('_c')) return { charKey: key, index: 2 };
+    if (spellType.includes('_v')) return { charKey: key, index: 3 };
+  }
+  if (spellType.startsWith('tesla_')) {
+    const key = 'tesla';
+    if (spellType.includes('_z')) return { charKey: key, index: 0 };
+    if (spellType.includes('_x')) return { charKey: key, index: 1 };
+    if (spellType.includes('_c')) return { charKey: key, index: 2 };
+    if (spellType.includes('_v')) return { charKey: key, index: 3 };
+  }
+  if (spellType.startsWith('frost_')) {
+    const key = 'frost';
+    if (spellType.includes('_z')) return { charKey: key, index: 0 };
+    if (spellType.includes('_x')) return { charKey: key, index: 1 };
+    if (spellType.includes('_c')) return { charKey: key, index: 2 };
+    if (spellType.includes('_v')) return { charKey: key, index: 3 };
+  }
+  if (spellType.startsWith('magma_')) {
+    const key = 'magma';
+    if (spellType.includes('_z')) return { charKey: key, index: 0 };
+    if (spellType.includes('_x')) return { charKey: key, index: 1 };
+    if (spellType.includes('_c')) return { charKey: key, index: 2 };
+    if (spellType.includes('_v')) return { charKey: key, index: 3 };
+  }
+  if (spellType.startsWith('wolf_')) {
+    const key = 'wolf';
+    if (spellType.includes('_z')) return { charKey: key, index: 0 };
+    if (spellType.includes('_x')) return { charKey: key, index: 1 };
+    if (spellType.includes('_c')) return { charKey: key, index: 2 };
+    if (spellType.includes('_v')) return { charKey: key, index: 3 };
+  }
+  if (spellType.startsWith('creation_')) {
+    const key = 'creation';
+    if (spellType.includes('_z')) return { charKey: key, index: 0 };
+    if (spellType.includes('_x')) return { charKey: key, index: 1 };
+    if (spellType.includes('_c')) return { charKey: key, index: 2 };
+    if (spellType.includes('_v')) return { charKey: key, index: 3 };
+  }
+  if (spellType.startsWith('gaia_')) {
+    const key = 'gaia';
+    if (spellType.includes('_z')) return { charKey: key, index: 0 };
+    if (spellType.includes('_x')) return { charKey: key, index: 1 };
+    if (spellType.includes('_c')) return { charKey: key, index: 2 };
+    if (spellType.includes('_v')) return { charKey: key, index: 3 };
+  }
+  if (spellType.startsWith('umbra_')) {
+    const key = 'umbra';
+    if (spellType.includes('_z')) return { charKey: key, index: 0 };
+    if (spellType.includes('_x')) return { charKey: key, index: 1 };
+    if (spellType.includes('_c')) return { charKey: key, index: 2 };
+    if (spellType.includes('_v')) return { charKey: key, index: 3 };
+  }
+  if (spellType.startsWith('venom_')) {
+    const key = 'venom';
+    if (spellType.includes('_z')) return { charKey: key, index: 0 };
+    if (spellType.includes('_x')) return { charKey: key, index: 1 };
+    if (spellType.includes('_c')) return { charKey: key, index: 2 };
+    if (spellType.includes('_v')) return { charKey: key, index: 3 };
+  }
+  return null;
+}
+
 class Spell {
   constructor(x, y, targetX, targetY, type, player) {
     this.x = x;
@@ -55,6 +136,28 @@ class Spell {
         this.damage = 11;
         this.maxLife = 30;
         this.color = '#ffff00';
+        break;
+
+      case 'gun_handgun':
+        this.speed = 16;
+        this.size = 2.5;
+        this.damage = 18;
+        this.maxLife = 35;
+        this.color = '#00f3ff';
+        break;
+      case 'gun_rifle':
+        this.speed = 20;
+        this.size = 2.2;
+        this.damage = 25;
+        this.maxLife = 35;
+        this.color = '#ff4500';
+        break;
+      case 'gun_shotgun':
+        this.speed = 14;
+        this.size = 3.2;
+        this.damage = 15;
+        this.maxLife = 22;
+        this.color = '#ffe600';
         break;
 
       // Custom Ignis Spells
@@ -876,6 +979,17 @@ class Spell {
 
     // Áp dụng nâng cấp từ Pháp Sư
     this.damage *= this.player.damageModifier;
+    if (this.player) {
+      const mapping = getSpellIndexAndCharKey(this.type);
+      if (mapping) {
+        const spellUpgrades = currentSaveData.spellUpgrades || {};
+        const charSpellUpgrades = spellUpgrades[mapping.charKey] || [0, 0, 0, 0];
+        const permLvl = charSpellUpgrades[mapping.index] || 0;
+        if (permLvl > 0 && this.damage) {
+          this.damage *= (1 + permLvl * 0.15);
+        }
+      }
+    }
     this.size *= (this.player.spellSizeModifier || 1.0);
     if (this.maxLife) {
       this.maxLife = Math.round(this.maxLife * (this.player.spellRangeModifier || 1.0));
@@ -2487,7 +2601,7 @@ class Spell {
         if (gameCtx.obstacles) {
           for (const obs of gameCtx.obstacles) {
             if (!obs.active) continue;
-            if (obs.type === 'spiketrap') continue;
+            if (obs.type !== 'ore_stone' && obs.type !== 'ore_iron') continue;
             
             const dist = Math.hypot(obs.x - this.x, obs.y - this.y);
             if (dist < obs.size + this.size) {

@@ -20,9 +20,15 @@ class Player {
     this.characterKey = gameCtx.currentCharacter;
     this.name = char.name;
 
-    this.maxHp = char.stats.maxHp;
-    this.speed = char.stats.speed;
-    this.damageModifier = char.stats.damageModifier;
+    const wizardUpgrades = currentSaveData.wizardUpgrades || {};
+    const charUpgrades = wizardUpgrades[this.characterKey] || { hp: 0, damage: 0, speed: 0 };
+    const lvlHp = charUpgrades.hp || 0;
+    const lvlDmg = charUpgrades.damage || 0;
+    const lvlSpd = charUpgrades.speed || 0;
+
+    this.maxHp = char.stats.maxHp + lvlHp * 10;
+    this.speed = char.stats.speed + lvlSpd * 0.15;
+    this.damageModifier = char.stats.damageModifier + lvlDmg * 0.10;
     this.cooldownModifier = char.stats.cooldownModifier;
     this.magnetRadius = char.stats.magnetRadius;
     this.critChance = char.stats.critChance;
@@ -52,8 +58,13 @@ class Player {
 
     this.hp = this.maxHp;
     this.hunger = 100;
-    this.wood = 0;
-    this.stone = 0;
+    this.wood = 100;
+    this.stone = 100;
+    this.iron = 100;
+    this.gold_ore = 50;
+    this.diamond_ore = 50;
+    this.equippedGun = null;
+    this.equippedTool = null;
     this.dashCooldown = 0;
     this.dashTimer = 0;
     this.dashAngle = 0;
@@ -475,11 +486,19 @@ class Player {
       }
     }
 
-    // Basic Attack: holding Left Click shoots towards mouse
+    // Basic Attack: holding Left Click shoots towards mouse (or fires equipped gun)
     if (mouse.clicked && this.basicAttackTimer <= 0) {
-      this.castBasicAttack(playerSpells, mouse.x, mouse.y);
-      const baseCD = SPELL_RECIPES[this.basicAttackType].cd || 20;
-      this.basicAttackTimer = Math.max(4, baseCD * this.cooldownModifier);
+      if (this.equippedGun) {
+        this.fireEquippedGun(playerSpells, mouse.x, mouse.y);
+        let gunCD = 15;
+        if (this.equippedGun === 'rifle') gunCD = 7;
+        else if (this.equippedGun === 'shotgun') gunCD = 35;
+        this.basicAttackTimer = Math.max(2, gunCD * this.cooldownModifier);
+      } else {
+        this.castBasicAttack(playerSpells, mouse.x, mouse.y);
+        const baseCD = SPELL_RECIPES[this.basicAttackType].cd || 20;
+        this.basicAttackTimer = Math.max(4, baseCD * this.cooldownModifier);
+      }
     }
 
     // Z, X, C, V Cast: Z is index 0, X is 1, C is 2, V is 3
@@ -672,6 +691,57 @@ class Player {
       if (nearest) {
         playerSpells.push(new Spell(this.x, this.y, nearest.x, nearest.y, 'tesla_v_chain', this));
       }
+    }
+  }
+
+  fireEquippedGun(playerSpells, targetX, targetY) {
+    if (!this.equippedGun) return;
+    
+    const targetAngle = this.angle;
+    
+    if (this.equippedGun === 'handgun') {
+      soundManager.playSpell('none');
+      playerSpells.push(new Spell(this.x, this.y, targetX, targetY, 'gun_handgun', this));
+      
+      // Flash effect
+      particleManager.addParticle(
+        this.x + Math.cos(targetAngle) * this.size * 1.5,
+        this.y + Math.sin(targetAngle) * this.size * 1.5,
+        '#00f3ff',
+        3, 4, targetAngle + (Math.random() * 0.2 - 0.1), 0.1
+      );
+    } else if (this.equippedGun === 'rifle') {
+      soundManager.playSpell('none');
+      playerSpells.push(new Spell(this.x, this.y, targetX, targetY, 'gun_rifle', this));
+      
+      // Flash effect
+      particleManager.addParticle(
+        this.x + Math.cos(targetAngle) * this.size * 1.5,
+        this.y + Math.sin(targetAngle) * this.size * 1.5,
+        '#ff4500',
+        2.5, 5, targetAngle + (Math.random() * 0.3 - 0.15), 0.12
+      );
+    } else if (this.equippedGun === 'shotgun') {
+      soundManager.playSpell('none');
+      // Fire 5 pellets in a spread
+      const spread = 0.15; // angle spread
+      for (let i = -2; i <= 2; i++) {
+        const angleOffset = i * spread;
+        const tx = this.x + Math.cos(targetAngle + angleOffset) * 100;
+        const ty = this.y + Math.sin(targetAngle + angleOffset) * 100;
+        playerSpells.push(new Spell(this.x, this.y, tx, ty, 'gun_shotgun', this));
+      }
+      
+      // Big flash
+      for (let i = 0; i < 8; i++) {
+        particleManager.addParticle(
+          this.x + Math.cos(targetAngle) * this.size * 1.5,
+          this.y + Math.sin(targetAngle) * this.size * 1.5,
+          '#ffe600',
+          3, 3 + Math.random() * 3, targetAngle + (Math.random() * 0.6 - 0.3), 0.08
+        );
+      }
+      particleManager.triggerShake(4);
     }
   }
 
@@ -1574,6 +1644,64 @@ class Player {
     ctx.beginPath();
     ctx.arc(this.size * 1.5, 0, 3, 0, Math.PI * 2);
     ctx.fill();
+
+    // Draw equipped guns or tools in hand
+    if (this.equippedGun) {
+      ctx.save();
+      if (this.equippedGun === 'handgun') {
+        ctx.fillStyle = '#00f3ff';
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        ctx.fillRect(this.size * 0.6, 5, 14, 4); // barrel
+        ctx.fillRect(this.size * 0.6, 7, 3, 6);  // grip
+      } else if (this.equippedGun === 'rifle') {
+        ctx.fillStyle = '#ff4500';
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        ctx.fillRect(this.size * 0.5, 5, 22, 5); // barrel
+        ctx.fillRect(this.size * 0.5 + 4, 10, 3, 6); // grip
+        ctx.fillStyle = '#9d00ff';
+        ctx.fillRect(this.size * 0.5 + 14, 8, 4, 3); // scope
+      } else if (this.equippedGun === 'shotgun') {
+        ctx.fillStyle = '#ffe600';
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        ctx.fillRect(this.size * 0.4, 4, 18, 7); // body
+        ctx.fillStyle = '#ff4500';
+        ctx.fillRect(this.size * 0.4 + 18, 5, 6, 4); // double barrels
+      }
+      ctx.restore();
+    }
+    if (this.equippedTool) {
+      ctx.save();
+      if (this.equippedTool === 'power_drill') {
+        ctx.fillStyle = '#ff8c00';
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.2;
+        ctx.fillRect(this.size * 0.5, 5, 12, 10); // drill body
+        ctx.fillStyle = '#ffe600';
+        ctx.beginPath();
+        const drillTime = Date.now() * 0.05;
+        const bitLength = 12 + Math.sin(drillTime) * 2;
+        ctx.moveTo(this.size * 0.5 + 12, 7);
+        ctx.lineTo(this.size * 0.5 + 12 + bitLength, 10);
+        ctx.lineTo(this.size * 0.5 + 12, 13);
+        ctx.closePath();
+        ctx.fill();
+      } else if (this.equippedTool === 'magnet_glove') {
+        ctx.fillStyle = '#ff00ff';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#ff00ff';
+        ctx.beginPath();
+        ctx.arc(this.size * 0.6, 8, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(this.size * 0.6, 8, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
 
     // 2. Draw equipped accessories (Cosmetics)
     const equipped = currentSaveData.equippedAccessories || {};
