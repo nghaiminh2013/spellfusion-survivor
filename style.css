@@ -1697,3 +1697,318 @@ h2 {
 .settings-content::-webkit-scrollbar-thumb:hover {
   background: rgba(255,255,255,0.2);
 }
+
+/* ==========================================
+   GM ADMIN PANEL CSS (GREEN CYBERPUNK THEME)
+   ========================================== */
+.admin-panel-overlay {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  width: 640px;
+  height: 520px;
+  background: rgba(6, 12, 12, 0.98);
+  border: 1.5px solid rgba(0, 255, 100, 0.35);
+  box-shadow: 0 0 35px rgba(0, 255, 100, 0.2);
+  border-radius: 16px;
+  padding: 22px;
+  overflow: hidden;
+  flex-direction: column;
+  gap: 14px;
+  backdrop-filter: blur(16px);
+  color: #fff;
+  font-family: 'Orbitron', 'Inter', sans-serif;
+  transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1.5px solid rgba(0, 255, 100, 0.2);
+  padding-bottom: 12px;
+  margin-bottom: 4px;
+}
+
+.admin-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #00ff66;
+  text-shadow: 0 0 10px rgba(0, 255, 100, 0.45);
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-close-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1.3rem;
+  cursor: pointer;
+  line-height: 1;
+  transition: all 0.2s ease;
+}
+
+.admin-close-btn:hover {
+  color: #ff3366;
+  text-shadow: 0 0 5px rgba(255, 51, 102, 0.8);
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.admin-tab-btn {
+  background: rgba(0, 255, 100, 0.03);
+  border: 1px solid rgba(0, 255, 100, 0.15);
+  border-radius: 6px;
+  color: #a8b2db;
+  font-size: 0.72rem;
+  padding: 6px 12px;
+  font-family: 'Orbitron', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.5px;
+}
+
+.admin-tab-btn:hover {
+  background: rgba(0, 255, 100, 0.08);
+  border-color: rgba(0, 255, 100, 0.4);
+  color: #00ff66;
+}
+
+.admin-tab-btn.active {
+  background: rgba(0, 255, 100, 0.15);
+  border-color: #00ff66;
+  color: #00ff66;
+  text-shadow: 0 0 5px rgba(0, 255, 100, 0.4);
+}
+
+.admin-tab-content {
+  display: none;
+  flex: 1;
+  overflow-y: auto;
+  flex-direction: column;
+  gap: 14px;
+  padding-right: 4px;
+}
+
+.admin-tab-content.active {
+  display: flex;
+}
+
+.admin-tab-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.admin-tab-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 100, 0.2);
+  border-radius: 2px;
+}
+
+.admin-tab-content::-webkit-scrollbar-thumb:hover {
+  background: #00ff66;
+}
+
+/* Cheat Grid & Switches */
+.admin-cheat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.admin-cheat-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: border-color 0.2s ease;
+}
+
+.admin-cheat-card:hover {
+  border-color: rgba(0, 255, 100, 0.2);
+}
+
+.admin-cheat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.admin-cheat-title {
+  font-size: 0.78rem;
+  font-weight: bold;
+  color: #fff;
+}
+
+.admin-cheat-desc {
+  font-size: 0.65rem;
+  color: #8fa0dd;
+}
+
+/* Custom switch toggle styling */
+.admin-switch-input {
+  display: none;
+}
+
+.admin-switch-label {
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+  background: #252839;
+  border-radius: 10px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.admin-switch-label::after {
+  content: '';
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: left 0.2s ease;
+}
+
+.admin-switch-input:checked + .admin-switch-label {
+  background: #00ff66;
+  box-shadow: 0 0 8px rgba(0, 255, 100, 0.4);
+}
+
+.admin-switch-input:checked + .admin-switch-label::after {
+  left: 22px;
+}
+
+/* Inputs & Actions */
+.admin-btn {
+  background: rgba(0, 255, 100, 0.1);
+  border: 1px solid rgba(0, 255, 100, 0.4);
+  color: #00ff66;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.7rem;
+  font-family: 'Orbitron', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-btn:hover {
+  background: rgba(0, 255, 100, 0.2);
+  box-shadow: 0 0 10px rgba(0, 255, 100, 0.3);
+}
+
+.admin-btn.danger {
+  background: rgba(255, 51, 102, 0.1);
+  border-color: rgba(255, 51, 102, 0.4);
+  color: #ff3366;
+}
+
+.admin-btn.danger:hover {
+  background: rgba(255, 51, 102, 0.2);
+  box-shadow: 0 0 10px rgba(255, 51, 102, 0.3);
+}
+
+.admin-input-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.admin-input {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(10, 10, 25, 0.9);
+  color: #fff;
+  outline: none;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.admin-input:focus {
+  border-color: #00ff66;
+  box-shadow: 0 0 5px rgba(0, 255, 100, 0.25);
+}
+
+/* User Directory & Banned lists */
+.admin-user-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 6px;
+  background: rgba(0,0,0,0.2);
+}
+
+.admin-user-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid rgba(255,255,255,0.03);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.admin-user-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(0, 255, 100, 0.1);
+}
+
+.admin-user-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.admin-user-status {
+  font-size: 0.65rem;
+  color: #8fa0dd;
+}
+
+.admin-user-status.banned {
+  color: #ff3366;
+  font-weight: bold;
+}
+
+/* Auth modal popup */
+.admin-auth-overlay {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10000;
+  width: 320px;
+  background: rgba(8, 8, 20, 0.98);
+  border: 1.5px solid rgba(0, 255, 100, 0.35);
+  box-shadow: 0 0 25px rgba(0, 255, 100, 0.3);
+  border-radius: 12px;
+  padding: 18px;
+  flex-direction: column;
+  gap: 12px;
+  text-align: center;
+  backdrop-filter: blur(16px);
+  color: #fff;
+  font-family: 'Orbitron', sans-serif;
+}
+

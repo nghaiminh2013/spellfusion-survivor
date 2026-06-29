@@ -418,9 +418,17 @@ function endGame() {
   if (gameCtx.currentDifficulty === 'hard') goldMultiplier = 1.5;
   else if (gameCtx.currentDifficulty === 'hardcore') goldMultiplier = 3.0;
 
-  const goldEarned = Math.round(gameCtx.player.kills * goldMultiplier);
+  // Áp dụng hệ số vàng của phòng chơi nhiều người
+  let mpGoldMult = 1.0;
+  const mpCount = window._selectedPlayerCount || 1;
+  if (mpCount === 2) mpGoldMult = 1.5;
+  else if (mpCount === 3) mpGoldMult = 2.0;
+  else if (mpCount === 4) mpGoldMult = 3.0;
+
+  const finalGoldMultiplier = goldMultiplier * mpGoldMult;
+  const goldEarned = Math.round(gameCtx.player.kills * finalGoldMultiplier);
   currentSaveData.gold += goldEarned;
-  document.getElementById('summary-kills').innerText = `${goldEarned} 🪙 (x${goldMultiplier})`;
+  document.getElementById('summary-kills').innerText = `${goldEarned} 🪙 (x${finalGoldMultiplier.toFixed(1)})`;
   document.getElementById('summary-score').innerText = Math.round(gameCtx.player.score);
 
   let difficultyUnlockMessage = '';
@@ -446,7 +454,7 @@ function endGame() {
   let goldRewarded = 0;
   let unlockedItemsList = [];
   
-  while (currentSaveData.accountXp >= currentSaveData.accountLevel * 100) {
+  while (currentSaveData.accountLevel < 100 && currentSaveData.accountXp >= currentSaveData.accountLevel * 100) {
     currentSaveData.accountXp -= currentSaveData.accountLevel * 100;
     currentSaveData.accountLevel++;
     levelsGained++;
@@ -470,6 +478,11 @@ function endGame() {
         unlockedItemsList.push('Nhẫn Kim Cương 💍');
       }
     }
+  }
+
+  if (currentSaveData.accountLevel >= 100) {
+    currentSaveData.accountLevel = 100;
+    currentSaveData.accountXp = 0;
   }
   
   saveAccountSave();
@@ -593,6 +606,10 @@ const LOBBY = {
 
 function enterLobby() {
   gameCtx.gameState = 'LOBBY';
+  
+  if (window.GameInvite) {
+    window.GameInvite.exitRoom();
+  }
 
   // Hide all screens
   ['start-screen','login-screen','game-over-screen','pause-screen','level-up-screen'].forEach(id => {
@@ -618,10 +635,38 @@ function enterLobby() {
     const lobbyUser = document.getElementById('lobby-username-display');
     const lobbyLv   = document.getElementById('lobby-menu-level');
     const lobbyGold = document.getElementById('lobby-menu-gold');
-    if (lobbyUser && currentSaveData) lobbyUser.textContent = safeStorage.getItem('spellfusion_session') || 'Guest';
+    const lobbyMaxWave = document.getElementById('lobby-menu-maxwave');
+    const lobbyCharIcon = document.getElementById('lobby-menu-char-icon');
+    const lobbyCharName = document.getElementById('lobby-menu-char-name');
+    const lobbyAdminBtn = document.getElementById('lobby-admin-btn');
+    const sessionUser = safeStorage.getItem('spellfusion_session') || 'Guest';
+
+    if (lobbyUser && currentSaveData) lobbyUser.textContent = sessionUser;
     if (lobbyLv   && currentSaveData) lobbyLv.textContent   = currentSaveData.accountLevel;
     if (lobbyGold && currentSaveData) lobbyGold.textContent = currentSaveData.gold;
+    if (lobbyMaxWave && currentSaveData) {
+      lobbyMaxWave.textContent = Math.max(currentSaveData.maxWaveNormal || 1, currentSaveData.maxWaveHard || 1);
+    }
+    
+    // Show / Hide Admin Panel based on account type
+    if (lobbyAdminBtn) {
+      if (sessionUser === 'admin' || sessionUser === 'spelladmin' || sessionUser === 'spelladminn') {
+        lobbyAdminBtn.style.display = 'flex';
+      } else {
+        lobbyAdminBtn.style.display = 'none';
+      }
+    }
+    
+    // Character selection sync
+    const char = CHARACTERS[gameCtx.currentCharacter] || CHARACTERS['ignis'];
+    if (lobbyCharIcon) lobbyCharIcon.textContent = char.icon;
+    if (lobbyCharName) lobbyCharName.textContent = char.name;
+
+    // Kiểm tra lời mời kết bạn & hiện badge
+    if (window.LobbyFriends) setTimeout(() => window.LobbyFriends.checkBadge(), 500);
+    if (window.LobbyInbox) setTimeout(() => window.LobbyInbox.checkBadge(), 500);
   }
+
 
   // Ensure gameCtx.player is initialized in lobby
   if (!gameCtx.player) {
@@ -629,7 +674,20 @@ function enterLobby() {
   }
 
   // Set player avatar color from character
-  const charColors = { ignis:'#ff4500', marina:'#00aaff', zephyr:'#00ff88', tesla:'#ffe600' };
+  const charColors = { 
+    ignis: '#ff4500', 
+    marina: '#00aaff', 
+    zephyr: '#00ff88', 
+    tesla: '#ffe600',
+    gaia: '#4caf50',
+    wolf: '#ff003c',
+    cobra: '#a020f0',
+    monk: '#ff9f43',
+    artemis: '#00dbff',
+    bloodmage: '#ff003c',
+    shadow: '#34495e',
+    paladin: '#ffd700'
+  };
   LOBBY.player.color = charColors[gameCtx.currentCharacter] || '#00f3ff';
 
   // Reset player position
@@ -1020,8 +1078,12 @@ function handleSpawning() {
     if (gameCtx.waveTimer <= 0) {
       gameCtx.waveState = 'ACTIVE'; // Đêm bắt đầu!
       
-      // Số lượng quái vật ban đêm tăng dần qua các ngày
-      gameCtx.totalEnemiesInWave = 12 + gameCtx.currentWave * 8;
+      // Số lượng quái vật ban đêm tăng dần qua các ngày và nhân theo số người chơi
+      let monsterMult = 1.0;
+      if (window._selectedPlayerCount && window._selectedPlayerCount > 1) {
+        monsterMult = 1.0 + (window._selectedPlayerCount - 1) * 0.5; // 2: 1.5, 3: 2.0, 4: 2.5
+      }
+      gameCtx.totalEnemiesInWave = Math.round((12 + gameCtx.currentWave * 8) * monsterMult);
       gameCtx.enemiesToSpawnInWave = gameCtx.totalEnemiesInWave;
       gameCtx.waveSpawnTimer = 0;
       gameCtx.waveAnnouncementTimer = 150;
@@ -1047,6 +1109,12 @@ function handleSpawning() {
         spawnInterval = Math.max(10, Math.round(spawnInterval * 0.8));
       } else if (gameCtx.currentDifficulty === 'hardcore') {
         spawnInterval = Math.max(6, Math.round(spawnInterval * 0.5));
+      }
+
+      // Giảm khoảng cách spawn quái nếu nhiều người chơi để quái xuất hiện kịp thời
+      if (window._selectedPlayerCount && window._selectedPlayerCount > 1) {
+        const spMultiplier = 1 / (1 + (window._selectedPlayerCount - 1) * 0.5);
+        spawnInterval = Math.max(6, Math.round(spawnInterval * spMultiplier));
       }
 
       if (gameCtx.waveSpawnTimer >= spawnInterval) {
@@ -1174,7 +1242,7 @@ function updateCollisions() {
         if (!obs.active || !obs.solid) continue;
         const odist = Math.hypot(b.x - obs.x, b.y - obs.y);
         if (odist < b.size + obs.size) {
-          obs.takeDamage(b.damage);
+          obs.takeDamage(b.damage, true);
           b.active = false;
           b.destroy3D();
           gameCtx.enemyBullets.splice(i, 1);
@@ -1218,7 +1286,7 @@ function updateCollisions() {
           e.y += pushY;
           
           // Quái vật cắn phá công trình (sát thương chia đều cho 60 FPS)
-          obs.takeDamage(e.damage / 60);
+          obs.takeDamage(e.damage / 60, true);
 
           // Phản sát thương lôi điện cho rào điện
           if (obs.type === 'electric_fence') {
@@ -2106,6 +2174,7 @@ const playBtn = document.getElementById('play-btn');
 if (playBtn && !playBtn.dataset.listenerSet) {
   playBtn.dataset.listenerSet = 'true';
   playBtn.addEventListener('click', () => {
+    gameCtx.gameState = 'PLAYING';
     const modal = document.getElementById('game-setup-modal');
     if (modal) modal.classList.remove('active');
     const lobbyHud = document.getElementById('lobby-hud');
@@ -2135,7 +2204,20 @@ if (charSelectModalPanel) {
       charSelectModalPanel.classList.remove('active');
       gameCtx.gameState = 'LOBBY';
       // Also update character color
-      const charColors = { ignis:'#ff4500', marina:'#00aaff', zephyr:'#00ff88', tesla:'#ffe600' };
+      const charColors = { 
+        ignis: '#ff4500', 
+        marina: '#00aaff', 
+        zephyr: '#00ff88', 
+        tesla: '#ffe600',
+        gaia: '#4caf50',
+        wolf: '#ff003c',
+        cobra: '#a020f0',
+        monk: '#ff9f43',
+        artemis: '#00dbff',
+        bloodmage: '#ff003c',
+        shadow: '#34495e',
+        paladin: '#ffd700'
+      };
       LOBBY.player.color = charColors[gameCtx.currentCharacter] || '#00f3ff';
     }
   });
@@ -2150,7 +2232,20 @@ if (closeCharSelectBtn && !closeCharSelectBtn.dataset.lobbyListenerSet) {
       if (charSelectModal) charSelectModal.classList.remove('active');
       gameCtx.gameState = 'LOBBY';
       // Also update character color
-      const charColors = { ignis:'#ff4500', marina:'#00aaff', zephyr:'#00ff88', tesla:'#ffe600' };
+      const charColors = { 
+        ignis: '#ff4500', 
+        marina: '#00aaff', 
+        zephyr: '#00ff88', 
+        tesla: '#ffe600',
+        gaia: '#4caf50',
+        wolf: '#ff003c',
+        cobra: '#a020f0',
+        monk: '#ff9f43',
+        artemis: '#00dbff',
+        bloodmage: '#ff003c',
+        shadow: '#34495e',
+        paladin: '#ffd700'
+      };
       LOBBY.player.color = charColors[gameCtx.currentCharacter] || '#00f3ff';
     }
   });

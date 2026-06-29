@@ -56,6 +56,12 @@ class Player {
       this.critChance += 0.08;
     }
 
+    let hpMultiplier = 1.0;
+    if (window._selectedPlayerCount && window._selectedPlayerCount > 1) {
+      hpMultiplier = 1.0 + (window._selectedPlayerCount - 1) * 0.20;
+    }
+    this.maxHp = Math.round(this.maxHp * hpMultiplier);
+
     this.hp = this.maxHp;
     this.hunger = 100;
     this.wood = 100;
@@ -135,6 +141,10 @@ class Player {
   }
 
   gainXP(amount) {
+    if (this.level >= 100) {
+      this.xp = 0;
+      return;
+    }
     this.xp += amount;
     if (this.xp >= this.xpNeeded) {
       this.levelUp();
@@ -142,8 +152,13 @@ class Player {
   }
 
   levelUp() {
+    if (this.level >= 100) return;
     this.xp -= this.xpNeeded;
     this.level++;
+    if (this.level > 100) {
+      this.level = 100;
+      this.xp = 0;
+    }
     this.xpNeeded = Math.round(this.level * 8 + 5);
     
     // Tự động mở khóa các chiêu thức theo cấp độ: Lv 2 mở X, Lv 3 mở C, Lv 4 mở V
@@ -166,7 +181,7 @@ class Player {
   }
 
   takeDamage(amount) {
-    if (this.isInvulnerable) return;
+    if (this.isInvulnerable || (window.gameCheats && window.gameCheats.godMode)) return;
 
     if (this.waterShieldOrbs > 0) {
       this.waterShieldOrbs--;
@@ -360,6 +375,9 @@ class Player {
     }
 
     let currentSpeed = this.speed;
+    if (window.gameCheats && window.gameCheats.speedMultiplier) {
+      currentSpeed *= window.gameCheats.speedMultiplier;
+    }
     if (this.windWingsActive) {
       currentSpeed *= 1.4;
     }
@@ -463,7 +481,9 @@ class Player {
 
     // Reduce spell cooldown timers
     for (let i = 0; i < 4; i++) {
-      if (this.spellCooldowns[i] > 0) {
+      if (window.gameCheats && window.gameCheats.noCooldown) {
+        this.spellCooldowns[i] = 0;
+      } else if (this.spellCooldowns[i] > 0) {
         this.spellCooldowns[i]--;
       }
     }

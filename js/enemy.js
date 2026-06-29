@@ -606,12 +606,17 @@ class Obstacle {
     }
   }
 
-  takeDamage(amount) {
+  takeDamage(amount, isMonster = false) {
     if (!this.active) return;
     if (this.type === 'rock_pillar') return; // indestructible
     
     // Check if mining
     const isOre = this.type === 'ore_stone' || this.type === 'ore_iron' || this.type === 'ore_gold' || this.type === 'ore_diamond';
+    if (isOre && isMonster) return; // Ores cannot take damage from monsters/enemy bullets!
+    
+    if (window.gameCheats && window.gameCheats.oneHitKill && !isOre) {
+      amount = this.hp;
+    }
     
     this.hp -= amount;
     

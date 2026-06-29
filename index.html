@@ -173,17 +173,31 @@
             <label style="font-family: 'Orbitron', sans-serif; font-size: 0.75rem; color: #8fa0dd; display: block; margin-bottom: 0.35rem; letter-spacing: 1px;">MẬT KHẨU</label>
             <input type="password" id="login-password" placeholder="Nhập mật khẩu..." style="width: 100%; padding: 0.7rem; border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(10,10,25,0.8); color: #fff; outline: none; font-size: 0.9rem;">
           </div>
+          
+          <!-- Saved Accounts Selector -->
+          <div id="saved-accounts-container" style="display: none; margin-bottom: 1.2rem; text-align: left;">
+            <label style="font-family: 'Orbitron', sans-serif; font-size: 0.72rem; color: #8fa0dd; display: block; margin-bottom: 0.4rem; letter-spacing: 0.5px;">BỘ NHỚ TÀI KHOẢN ĐÃ LƯU</label>
+            <div id="saved-accounts-list" style="display: flex; flex-direction: column; gap: 0.4rem; max-height: 120px; overflow-y: auto; padding-right: 0.2rem;">
+              <!-- Dynamically populated by JS -->
+            </div>
+            
+            <!-- Device Sync Code Section -->
+            <div style="margin-top: 0.8rem; font-size: 0.7rem; color: #8fa0dd; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 8px;">
+              <span style="display: block; margin-bottom: 4px;">🔗 Mã đồng bộ thiết bị (Sync Code):</span>
+              <div style="display: flex; gap: 6px; align-items: center;">
+                <span id="display-sync-code" style="font-family: monospace; color: var(--neon-cyan); background: rgba(0,243,255,0.05); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(0,243,255,0.15); font-size: 0.68rem; cursor: pointer; text-shadow: 0 0 3px rgba(0,243,255,0.3);" title="Click để sao chép">dev_loading</span>
+                <button onclick="window.promptSyncCode()" class="btn" style="padding: 2px 8px; font-size: 0.65rem; border-color: var(--neon-yellow); color: var(--neon-yellow); background: rgba(255,230,0,0.02); text-shadow: 0 0 3px rgba(255,230,0,0.3); font-family: 'Orbitron', sans-serif; cursor: pointer;">ĐỒNG BỘ MÁY KHÁC 📲</button>
+              </div>
+            </div>
+          </div>
+          
           <div id="login-message" style="color: var(--neon-magenta); font-size: 0.8rem; min-height: 1.2rem; margin-bottom: 1rem; font-weight: 600; text-align: center;"></div>
           <button id="login-btn" class="btn" style="width: 100%; margin-top: 0.5rem; padding: 0.7rem 1rem;">ĐĂNG NHẬP 🔑</button>
           <button id="guest-login-btn" class="btn btn-secondary" style="width: 100%; margin-top: 0.8rem; padding: 0.7rem 1rem; border-color: var(--neon-cyan); color: var(--neon-cyan); background: rgba(0, 243, 255, 0.05); text-shadow: 0 0 5px rgba(0,243,255,0.4);">CHƠI GUEST (KHÔNG CẦN ACC) 🚀</button>
           <div style="margin-top: 1.2rem; font-size: 0.8rem; color: #8fa0dd; text-align: center;">
             Chưa có tài khoản? <a href="#" id="go-to-register" style="color: var(--neon-cyan); text-decoration: none; font-weight: bold; text-shadow: 0 0 5px rgba(0, 243, 255, 0.4);">Đăng ký ngay</a>
           </div>
-          <div style="margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px dashed rgba(255, 255, 255, 0.1); font-size: 0.8rem; text-align: center; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-            <a href="#" id="btn-export-data" style="color: var(--neon-yellow); text-decoration: none; font-weight: bold; text-shadow: 0 0 4px rgba(255, 230, 0, 0.3);">Backup/Xuất Acc 💾</a>
-            <span style="color: rgba(255,255,255,0.2);">|</span>
-            <a href="#" id="btn-import-data" style="color: var(--neon-cyan); text-decoration: none; font-weight: bold; text-shadow: 0 0 4px rgba(0, 243, 255, 0.3);">Nhập Acc 📥</a>
-          </div>
+
           <div style="margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px dashed rgba(255, 255, 255, 0.1); font-size: 0.8rem; text-align: center;">
             💡 Muốn sáng tạo game? <a href="./idea-forge/index.html" style="color: var(--neon-magenta); text-decoration: none; font-weight: bold; text-shadow: 0 0 5px rgba(255, 0, 127, 0.4);">Mở Lò Tạo Ý Tưởng IdeaForge ⚡</a>
           </div>
@@ -222,8 +236,10 @@
         <div style="font-size: 0.85rem; color: #b0c0f0;">Chiến Binh: <strong id="lobby-username-display" style="color: #fff; text-shadow: 0 0 5px #fff;">Guest</strong></div>
         <div style="font-family: 'Orbitron', sans-serif; font-size: 0.72rem; color: var(--neon-cyan); margin-top: 2px;">LV <span id="lobby-menu-level">1</span></div>
         <div style="font-family: 'Orbitron', sans-serif; font-size: 0.75rem; color: var(--neon-yellow); margin-top: 2px;">Vàng: <span id="lobby-menu-gold">0</span></div>
+        <div style="font-family: 'Orbitron', sans-serif; font-size: 0.72rem; color: var(--neon-magenta); margin-top: 2px;">Đêm cao nhất: <span id="lobby-menu-maxwave">1</span></div>
+        <div style="font-family: 'Orbitron', sans-serif; font-size: 0.72rem; color: #a8b2db; margin-top: 2px; display: flex; align-items: center; gap: 4px;">Nhân vật: <span id="lobby-menu-char-icon" style="font-size: 0.85rem;">🔥</span><span id="lobby-menu-char-name" style="color: #fff; font-weight: bold;">Ignis</span></div>
         <div style="display: flex; gap: 6px; margin-top: 8px;">
-          <button id="lobby-backup-btn" class="btn" style="padding: 3px 8px; font-size: 0.65rem; border-color: var(--neon-yellow); color: var(--neon-yellow); flex: 1; text-shadow: 0 0 3px rgba(255,230,0,0.3); background: rgba(255,230,0,0.02);">SAO LƯU ACC</button>
+          <button id="lobby-cloud-sync-btn" onclick="window.manualCloudSync()" class="btn" style="padding: 3px 8px; font-size: 0.65rem; border-color: var(--neon-cyan); color: var(--neon-cyan); flex: 1; text-shadow: 0 0 3px rgba(0,243,255,0.3); background: rgba(0,243,255,0.02);">ĐỒNG BỘ CLOUD ☁️</button>
           <button id="lobby-logout-btn" class="btn" style="padding: 3px 8px; font-size: 0.65rem; border-color: var(--neon-magenta); color: var(--neon-magenta); flex: 1; text-shadow: 0 0 3px rgba(255,0,85,0.3); background: rgba(255,0,85,0.02);">ĐĂNG XUẤT</button>
         </div>
       </div>
@@ -236,6 +252,348 @@
         </div>
         <div id="lobby-giftcode-message" style="font-size: 0.65rem; color: var(--neon-magenta); font-weight: 600; min-height: 12px; margin-top: 4px; text-align: center;"></div>
       </div>
+
+      <!-- NÚT MỞ BẢNG BẠN BÈ -->
+      <button id="lobby-friends-btn" onclick="window.LobbyFriends.open()" style="margin-top: 10px; width: 100%; padding: 5px 8px; font-size: 0.68rem; font-family: 'Orbitron', sans-serif; background: rgba(0,243,255,0.06); border: 1px solid rgba(0,243,255,0.35); border-radius: 6px; color: var(--neon-cyan); cursor: pointer; letter-spacing: 0.5px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px;">
+        👥 BẠN BÈ <span id="friend-req-badge" style="display:none; background: var(--neon-magenta); color: #fff; border-radius: 50%; padding: 1px 5px; font-size: 0.6rem; font-weight: bold;"></span>
+      </button>
+
+      <!-- NÚT MỞ BẢNG HÒM THƯ -->
+      <button id="lobby-inbox-btn" onclick="window.LobbyInbox.open()" style="margin-top: 8px; width: 100%; padding: 5px 8px; font-size: 0.68rem; font-family: 'Orbitron', sans-serif; background: rgba(255,0,85,0.06); border: 1px solid rgba(255,0,85,0.35); border-radius: 6px; color: var(--neon-magenta); cursor: pointer; letter-spacing: 0.5px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px;">
+        📬 HÒM THƯ <span id="inbox-badge" style="display:none; background: var(--neon-cyan); color: #000; border-radius: 50%; padding: 1px 5px; font-size: 0.6rem; font-weight: bold;"></span>
+      </button>
+
+      <!-- NÚT HƯỚNG DẪN CHƠI -->
+      <button id="lobby-tutorial-btn" onclick="window.LobbyTutorial.open()" style="margin-top: 8px; width: 100%; padding: 5px 8px; font-size: 0.68rem; font-family: 'Orbitron', sans-serif; background: rgba(255,230,0,0.06); border: 1px solid rgba(255,230,0,0.35); border-radius: 6px; color: var(--neon-yellow); cursor: pointer; letter-spacing: 0.5px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px;">
+        📖 HƯỚNG DẪN CHƠI
+      </button>
+
+      <!-- NÚT MỞ BẢNG GM ADMIN -->
+      <button id="lobby-admin-btn" onclick="window.LobbyAdmin.open()" style="margin-top: 8px; width: 100%; padding: 5px 8px; font-size: 0.68rem; font-family: 'Orbitron', sans-serif; background: rgba(0,255,100,0.06); border: 1px solid rgba(0,255,100,0.35); border-radius: 6px; color: #00ff66; cursor: pointer; letter-spacing: 0.5px; transition: all 0.2s; display: none; align-items: center; justify-content: center; gap: 5px;">
+        🛡️ GM ADMIN PANEL
+      </button>
+    </div>
+
+    <!-- PANEL BẠN BÈ (POPUP) -->
+    <div id="friends-panel" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:5000; width:340px; max-height:520px; background:rgba(8,8,22,0.97); border:1px solid rgba(0,243,255,0.3); border-radius:14px; box-shadow:0 0 30px rgba(0,243,255,0.15); padding:18px; overflow:hidden; display:none; flex-direction:column; gap:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-family:'Orbitron',sans-serif; font-size:0.85rem; color:var(--neon-cyan); letter-spacing:1px;">👥 BẠN BÈ</span>
+        <button onclick="window.LobbyFriends.close()" style="background:none; border:none; color:#8fa0dd; font-size:1.1rem; cursor:pointer; line-height:1;">✕</button>
+      </div>
+
+      <!-- TÌM KIẾM -->
+      <div style="display:flex; gap:6px;">
+        <input type="text" id="friend-search-input" placeholder="Nhập tên người chơi..." maxlength="12"
+          style="flex:1; padding:6px 8px; font-size:0.78rem; border-radius:6px; border:1px solid var(--glass-border); background:rgba(10,10,25,0.9); color:#fff; outline:none;"
+          oninput="window.LobbyFriends.onSearchInput(this.value)">
+        <button id="friend-search-btn" onclick="window.LobbyFriends.search()" style="padding:6px 10px; font-size:0.72rem; font-family:'Orbitron',sans-serif; background:rgba(0,243,255,0.07); border:1px solid rgba(0,243,255,0.35); border-radius:6px; color:var(--neon-cyan); cursor:pointer;">TÌM</button>
+      </div>
+      <div id="friend-search-result" style="font-size:0.75rem; min-height:14px; color:#8fa0dd;"></div>
+
+      <!-- LỜI MỜI ĐẾN -->
+      <div id="friend-requests-section" style="display:none; flex-direction:column; gap:6px;">
+        <div style="font-family:'Orbitron',sans-serif; font-size:0.68rem; color:var(--neon-yellow); letter-spacing:0.5px;">📩 LỜI MỜI KẾT BẠN</div>
+        <div id="friend-requests-list" style="display:flex; flex-direction:column; gap:5px; max-height:100px; overflow-y:auto;"></div>
+      </div>
+
+      <!-- DANH SÁCH BẠN BÈ -->
+      <div style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:6px;">
+        <div style="font-family:'Orbitron',sans-serif; font-size:0.68rem; color:#8fa0dd; letter-spacing:0.5px;">🤝 BẠN BÈ CỦA BẠN</div>
+        <div id="friends-list" style="display:flex; flex-direction:column; gap:5px; min-height:40px;"></div>
+      </div>
+    </div>
+
+    <!-- PANEL HÒM THƯ (POPUP) -->
+    <div id="inbox-panel" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:5000; width:340px; max-height:520px; background:rgba(8,8,22,0.97); border:1px solid rgba(255,0,85,0.3); border-radius:14px; box-shadow:0 0 30px rgba(255,0,85,0.15); padding:18px; overflow:hidden; display:none; flex-direction:column; gap:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-family:'Orbitron',sans-serif; font-size:0.85rem; color:var(--neon-magenta); letter-spacing:1px;">📬 HÒM THƯ</span>
+        <button onclick="window.LobbyInbox.close()" style="background:none; border:none; color:#8fa0dd; font-size:1.1rem; cursor:pointer; line-height:1;">✕</button>
+      </div>
+
+      <!-- LỜI MỜI VÀO PHÒNG -->
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <div style="font-family:'Orbitron',sans-serif; font-size:0.68rem; color:#ff9500; letter-spacing:0.5px;">🎮 LỜI MỜI VÀO PHÒNG</div>
+        <div id="inbox-invites-list" style="display:flex; flex-direction:column; gap:6px; max-height:100px; overflow-y:auto; min-height:30px;"></div>
+      </div>
+
+      <!-- QUÀ TẶNG NHẬN ĐƯỢC -->
+      <div style="display:flex; flex-direction:column; gap:6px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:8px; margin-top:3px;">
+        <div style="font-family:'Orbitron',sans-serif; font-size:0.68rem; color:var(--neon-yellow); letter-spacing:0.5px;">🎁 QUÀ TẶNG NHẬN ĐƯỢC</div>
+        <div id="inbox-gifts-list" style="display:flex; flex-direction:column; gap:5px; max-height:150px; overflow-y:auto; min-height:40px;"></div>
+      </div>
+
+      <!-- LỜI MỜI KẾT BẠN -->
+      <div style="display:flex; flex-direction:column; gap:6px; flex-grow:1; overflow-y:auto; border-top:1px dashed rgba(255,255,255,0.1); padding-top:8px; margin-top:3px;">
+        <div style="font-family:'Orbitron',sans-serif; font-size:0.68rem; color:var(--neon-cyan); letter-spacing:0.5px;">📩 LỜI MỜI KẾT BẠN</div>
+        <div id="inbox-requests-list" style="display:flex; flex-direction:column; gap:5px; min-height:30px;"></div>
+      </div>
+    </div>
+
+    <!-- PANEL TẶNG QUÀ (POPUP) -->
+    <div id="gift-panel" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:5000; width:340px; max-height:520px; background:rgba(8,8,22,0.97); border:1px solid rgba(255,149,0,0.3); border-radius:14px; box-shadow:0 0 30px rgba(255,149,0,0.15); padding:18px; overflow:hidden; display:none; flex-direction:column; gap:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-family:'Orbitron',sans-serif; font-size:0.85rem; color:#ff9500; letter-spacing:1px;">🎁 TẶNG QUÀ</span>
+        <button onclick="window.LobbyGift.close()" style="background:none; border:none; color:#8fa0dd; font-size:1.1rem; cursor:pointer; line-height:1;">✕</button>
+      </div>
+      <div style="font-size:0.75rem; color:#8fa0dd; margin-bottom:4px;">Người nhận: <strong id="gift-target-username" style="color:#fff;">...</strong></div>
+
+      <div style="border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:0.72rem; color:#8fa0dd;">Vàng của bạn:</span>
+        <span id="gift-my-gold" style="font-family:'Orbitron',sans-serif; font-size:0.85rem; color:var(--neon-yellow); font-weight:bold;">0</span>
+      </div>
+
+      <!-- TẶNG VÀNG -->
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <div style="font-family:'Orbitron',sans-serif; font-size:0.68rem; color:var(--neon-yellow); letter-spacing:0.5px;">💰 TẶNG VÀNG</div>
+        <div style="display:flex; gap:6px;">
+          <input type="number" id="gift-gold-amount" placeholder="Nhập số lượng vàng..." min="1"
+            style="flex:1; padding:6px 8px; font-size:0.78rem; border-radius:6px; border:1px solid var(--glass-border); background:rgba(10,10,25,0.9); color:#fff; outline:none; font-family:'Orbitron',sans-serif;">
+          <button onclick="window.LobbyGift.sendGold()" style="padding:6px 10px; font-size:0.72rem; font-family:'Orbitron',sans-serif; background:rgba(255,149,0,0.1); border:1px solid #ff9500; border-radius:6px; color:#ff9500; cursor:pointer;">GỬI</button>
+        </div>
+      </div>
+
+      <!-- TẶNG TRANG BỊ -->
+      <div style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:6px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:10px; margin-top:5px;">
+        <div style="font-family:'Orbitron',sans-serif; font-size:0.68rem; color:var(--neon-cyan); letter-spacing:0.5px; margin-bottom:4px;">🛍️ MUA TẶNG TRANG BỊ</div>
+        <div id="gift-accessories-list" style="display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto;">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL HƯỚNG DẪN CHƠI (POPUP) -->
+    <div id="tutorial-panel" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:5000; width:450px; max-height:85vh; background:rgba(8,8,22,0.98); border:1px solid rgba(255,230,0,0.3); border-radius:14px; box-shadow:0 0 35px rgba(255,230,0,0.15); padding:20px; overflow:hidden; flex-direction:column; gap:14px; color: #fff;">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
+        <span style="font-family:'Orbitron',sans-serif; font-size:0.95rem; color:var(--neon-yellow); letter-spacing:1px; font-weight: bold; display: flex; align-items: center; gap: 8px;">📖 HƯỚNG DẪN TÂN THỦ</span>
+        <button onclick="window.LobbyTutorial.close()" style="background:none; border:none; color:#8fa0dd; font-size:1.1rem; cursor:pointer; line-height:1; transition: color 0.2s;" onmouseover="this.style.color='#ff3366'" onmouseout="this.style.color='#8fa0dd'">✕</button>
+      </div>
+
+      <div style="flex:1; overflow-y:auto; padding-right:6px; display:flex; flex-direction:column; gap:16px; font-size:0.78rem; line-height:1.5; color: #cbd5e1;">
+        <!-- Phần 1: Di chuyển & Chiến đấu -->
+        <div>
+          <h4 style="font-family:'Orbitron',sans-serif; font-size:0.8rem; color:var(--neon-cyan); margin: 0 0 6px 0; border-left: 2px solid var(--neon-cyan); padding-left: 6px;">🎮 DI CHUYỂN & CHIẾN ĐẤU</h4>
+          <p style="margin: 0;">- Sử dụng cụm phím <strong>W, A, S, D</strong> hoặc <strong>các phím mũi tên</strong> để di chuyển nhân vật.</p>
+          <p style="margin: 3px 0 0 0;">- Bấm <strong>chuột trái</strong> (hoặc đè chuột) để tấn công và phóng phép thuật về hướng con trỏ chuột.</p>
+        </div>
+
+        <!-- Phần 2: Chế tạo & Nguyên liệu -->
+        <div>
+          <h4 style="font-family:'Orbitron',sans-serif; font-size:0.8rem; color:var(--neon-yellow); margin: 0 0 6px 0; border-left: 2px solid var(--neon-yellow); padding-left: 6px;">🔨 CHẾ TẠO & SINH TỒN</h4>
+          <p style="margin: 0;">- Nhấn phím <strong>[B]</strong> để mở bảng Chế tạo (Crafting Overlay).</p>
+          <p style="margin: 3px 0 0 0;">- Khai thác <strong>Cây (Gỗ)</strong> và các loại <strong>Quặng (Đá, Sắt, Vàng, Kim cương)</strong> bằng cách đánh vào chúng.</p>
+          <p style="margin: 3px 0 0 0;">- Chế tạo <strong>Bàn Chế Tạo 2 (Crafting Table 2)</strong> và đứng gần nó để chế tạo các món cao cấp: súng cầm tay, máy đào mỏ, trụ lửa, rào điện...</p>
+        </div>
+
+        <!-- Phần 3: Máy đào mỏ tự động -->
+        <div>
+          <h4 style="font-family:'Orbitron',sans-serif; font-size:0.8rem; color:var(--neon-magenta); margin: 0 0 6px 0; border-left: 2px solid var(--neon-magenta); padding-left: 6px;">⚙️ MÁY ĐÀO MỎ TỰ ĐỘNG (MINING DRILL)</h4>
+          <p style="margin: 0;">- Chế tạo bằng kim cương, vàng, sắt và đặt xuống đất để tự động đào khoáng sản.</p>
+          <p style="margin: 3px 0 0 0;">- Đến gần máy đào, bấm phím <strong>[E]</strong> để mở kho chứa tài nguyên, rút tài nguyên ra hoặc dùng sắt/vàng/kim cương để nâng cấp hiệu suất máy.</p>
+        </div>
+
+        <!-- Phần 4: Vượt Ải & Độ Khó -->
+        <div>
+          <h4 style="font-family:'Orbitron',sans-serif; font-size:0.8rem; color:#00ff66; margin: 0 0 6px 0; border-left: 2px solid #00ff66; padding-left: 6px;">⚔️ ĐÊM SINH TỒN (WAVES)</h4>
+          <p style="margin: 0;">- Mỗi Wave (Đêm) sẽ kéo dài trong khoảng thời gian nhất định. Quái vật sẽ xuất hiện liên tục và tấn công bạn.</p>
+          <p style="margin: 3px 0 0 0;">- Vượt qua Wave 20 để mở khóa <strong>Độ Khó Khó (Hard Mode)</strong> và Wave 50 để mở khóa <strong>Hardcore Mode</strong>.</p>
+        </div>
+
+        <!-- Phần 5: Tính năng Online & Đám mây -->
+        <div>
+          <h4 style="font-family:'Orbitron',sans-serif; font-size:0.8rem; color:#8fa0dd; margin: 0 0 6px 0; border-left: 2px solid #8fa0dd; padding-left: 6px;">☁️ TÀI KHOẢN ĐÁM MÂY (CLOUD SYNC)</h4>
+          <p style="margin: 0;">- Đăng ký tài khoản trực tuyến để tự động đồng bộ hóa vàng, cấp độ, số đêm và pháp sư đã mở khóa lên Cloud.</p>
+          <p style="margin: 3px 0 0 0;">- Sử dụng nút <strong>ĐỒNG BỘ CLOUD</strong> ở sảnh chờ để lưu dữ liệu thủ công bất kỳ lúc nào.</p>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px;">
+        <button onclick="window.LobbyTutorial.close()" class="btn" style="padding: 6px 20px; font-size: 0.72rem; border-color: var(--neon-yellow); color: var(--neon-yellow); background: rgba(255,230,0,0.05); cursor: pointer; font-family:'Orbitron',sans-serif;">ĐÃ HIỂU</button>
+      </div>
+    </div>
+
+    <!-- 🛡️ GM ADMIN PANEL MODAL -->
+    <div id="admin-panel" class="admin-panel-overlay">
+      <div class="admin-header">
+        <span class="admin-title">🛡️ GM SERVER ADMIN PANEL</span>
+        <button class="admin-close-btn" onclick="window.LobbyAdmin.close()">✕</button>
+      </div>
+      
+      <!-- Tab Controls -->
+      <div class="admin-tabs">
+        <button class="admin-tab-btn active" id="admin-btn-cheats" onclick="window.LobbyAdmin.switchTab('cheats')">⚡ HACKS & CHEATS</button>
+        <button class="admin-tab-btn" id="admin-btn-account" onclick="window.LobbyAdmin.switchTab('account')">👤 SỬA TÀI KHOẢN</button>
+        <button class="admin-tab-btn" id="admin-btn-cloud" onclick="window.LobbyAdmin.switchTab('cloud')">🌐 BẢNG CLOUD</button>
+        <button class="admin-tab-btn" id="admin-btn-giftcodes" onclick="window.LobbyAdmin.switchTab('giftcodes')">🎁 MÃ QUÀ TẶNG</button>
+      </div>
+      
+      <!-- Tab 1: Cheats & Hacks -->
+      <div id="admin-tab-cheats" class="admin-tab-content active">
+        <div class="admin-cheat-grid">
+          <div class="admin-cheat-card">
+            <div class="admin-cheat-info">
+              <span class="admin-cheat-title">God Mode (Bất Tử)</span>
+              <span class="admin-cheat-desc">Không nhận sát thương từ quái</span>
+            </div>
+            <div>
+              <input type="checkbox" id="cheat-godmode" class="admin-switch-input" onchange="window.LobbyAdmin.toggleCheat('godMode', this.checked)">
+              <label for="cheat-godmode" class="admin-switch-label"></label>
+            </div>
+          </div>
+          
+          <div class="admin-cheat-card">
+            <div class="admin-cheat-info">
+              <span class="admin-cheat-title">One-Hit Kill</span>
+              <span class="admin-cheat-desc">Tiêu diệt quái trong 1 hit</span>
+            </div>
+            <div>
+              <input type="checkbox" id="cheat-onehit" class="admin-switch-input" onchange="window.LobbyAdmin.toggleCheat('oneHitKill', this.checked)">
+              <label for="cheat-onehit" class="admin-switch-label"></label>
+            </div>
+          </div>
+          
+          <div class="admin-cheat-card">
+            <div class="admin-cheat-info">
+              <span class="admin-cheat-title">No Cooldown</span>
+              <span class="admin-cheat-desc">Phép hồi chiêu tức thời</span>
+            </div>
+            <div>
+              <input type="checkbox" id="cheat-nocd" class="admin-switch-input" onchange="window.LobbyAdmin.toggleCheat('noCooldown', this.checked)">
+              <label for="cheat-nocd" class="admin-switch-label"></label>
+            </div>
+          </div>
+          
+          <div class="admin-cheat-card">
+            <div class="admin-cheat-info">
+              <span class="admin-cheat-title">Tốc Độ Di Chuyển</span>
+              <span class="admin-cheat-desc">Tăng tốc độ chạy nhân vật</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:5px;">
+              <select id="cheat-speed" onchange="window.LobbyAdmin.setSpeedHack(this.value)" style="padding:4px 6px; border-radius:4px; background:#252839; color:#fff; border:1px solid rgba(255,255,255,0.1); font-family:Orbitron; font-size:0.7rem;">
+                <option value="1">x1.0 (Thường)</option>
+                <option value="1.5">x1.5 (Nhanh)</option>
+                <option value="2">x2.0 (Rất Nhanh)</option>
+                <option value="3">x3.0 (Tối Thượng)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <div style="border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 12px; display:flex; flex-direction:column; gap:10px;">
+          <span style="font-size:0.75rem; color:#00ff66; font-weight:bold;">⚙️ TIỆN ÍCH TRẬN ĐẤU</span>
+          <div style="display:flex; gap:10px;">
+            <button class="admin-btn" onclick="window.LobbyAdmin.spawnResources()" style="flex:1;">➕ NHẬN +100 MỌI NGUYÊN LIỆU</button>
+            <button class="admin-btn danger" onclick="window.LobbyAdmin.skipWave()" style="flex:1;">☠️ DIỆT QUÁI - QUA ĐỢT</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Tab 2: Account Editor -->
+      <div id="admin-tab-account" class="admin-tab-content">
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div class="admin-input-group">
+            <span style="font-size:0.72rem; color:#8fa0dd; width:120px;">Sửa Vàng Acc:</span>
+            <input type="number" id="admin-edit-gold" class="admin-input" placeholder="Nhập số vàng...">
+            <button class="admin-btn" onclick="window.LobbyAdmin.updateGold()">LƯU VÀNG</button>
+          </div>
+          
+          <div class="admin-input-group">
+            <span style="font-size:0.72rem; color:#8fa0dd; width:120px;">Cấp Độ Acc:</span>
+            <input type="number" id="admin-edit-level" class="admin-input" placeholder="Nhập level...">
+            <button class="admin-btn" onclick="window.LobbyAdmin.updateLevel()">LƯU CẤP</button>
+          </div>
+          
+          <div style="border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 12px; display:flex; flex-direction:column; gap:8px; margin-top:5px;">
+            <span style="font-size:0.75rem; color:#00ff66; font-weight:bold;">🔓 PHÍM TẮT MỞ KHÓA</span>
+            <div style="display:flex; gap:10px;">
+              <button class="admin-btn" onclick="window.LobbyAdmin.unlockAllWizards()" style="flex:1;">🧙‍♂️ MỞ KHÓA TOÀN PHÁP SƯ</button>
+              <button class="admin-btn" onclick="window.LobbyAdmin.unlockAllAccessories()" style="flex:1;">👑 MỞ KHÓA TOÀN PHỤ KIỆN</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Tab 3: Cloud Database & Ban Manager -->
+      <div id="admin-tab-cloud" class="admin-tab-content">
+        <div style="display:flex; flex-direction:column; gap:10px; flex:1;">
+          <div class="admin-input-group">
+            <input type="text" id="admin-search-user" class="admin-input" placeholder="Nhập tên người chơi khác...">
+            <button class="admin-btn" onclick="window.LobbyAdmin.searchUser()">TRA CỨU</button>
+          </div>
+          
+          <!-- Search Result Info -->
+          <div id="admin-search-result" style="display:none; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:10px; font-size:0.72rem; flex-direction:column; gap:6px;">
+            <div style="display:flex; justify-content:space-between;">
+              <span>Người chơi: <strong id="admin-res-name" style="color:#00ff66;">...</strong></span>
+              <span>Pass: <strong id="admin-res-pw" style="color:#ffd700;">...</strong></span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span>Vàng: <strong id="admin-res-gold" style="color:#ffd700;">...</strong></span>
+              <span>Cấp: <strong id="admin-res-level" style="color:#00ff7f;">...</strong></span>
+            </div>
+            
+            <!-- Custom Level & Gold Sets -->
+            <div style="display:flex; flex-direction:column; gap:4px; border-top:1px dashed rgba(255,255,255,0.08); padding-top:6px; margin-top:2px;">
+              <div style="display:flex; gap:6px; align-items:center;">
+                <input type="number" id="admin-set-user-gold" class="admin-input" placeholder="Set số lượng vàng..." style="flex:1; padding:4px 6px; font-size:0.7rem; height:24px; font-family:'Orbitron'; background:rgba(10,10,25,0.8); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:4px; outline:none;">
+                <button class="admin-btn" onclick="window.LobbyAdmin.setUserGold()" style="padding:4px 10px; font-size:0.68rem; height:24px; white-space:nowrap;">ĐẶT VÀNG</button>
+              </div>
+              <div style="display:flex; gap:6px; align-items:center;">
+                <input type="number" id="admin-set-user-level" class="admin-input" placeholder="Set cấp độ..." min="1" style="flex:1; padding:4px 6px; font-size:0.7rem; height:24px; font-family:'Orbitron'; background:rgba(10,10,25,0.8); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:4px; outline:none;">
+                <button class="admin-btn" onclick="window.LobbyAdmin.setUserLevel()" style="padding:4px 10px; font-size:0.68rem; height:24px; white-space:nowrap;">ĐẶT CẤP</button>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:8px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:8px; margin-top:4px;">
+              <button class="admin-btn" onclick="window.LobbyAdmin.addGoldToUser()" style="flex:1;">+50K VÀNG</button>
+              <button id="admin-ban-user-btn" class="admin-btn danger" onclick="window.LobbyAdmin.toggleBanUser()" style="flex:1;">BAN ACC</button>
+            </div>
+          </div>
+          
+          <!-- User directory list -->
+          <div style="display:flex; flex-direction:column; gap:4px; flex:1; overflow:hidden;">
+            <span style="font-size:0.7rem; color:#8fa0dd; font-weight:bold;">👥 DANH SÁCH TÀI KHOẢN TRÊN SERVER:</span>
+            <div id="admin-user-list-container" class="admin-user-list">
+              <!-- Dynamically populated -->
+              <span style="font-size:0.68rem; color:#a8b2db; text-align:center; padding:15px;">Đang tải danh sách tài khoản...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Tab 4: Gift Codes Manager -->
+      <div id="admin-tab-giftcodes" class="admin-tab-content">
+        <div style="display:flex; flex-direction:column; gap:10px; flex:1;">
+          <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:8px;">
+            <span style="font-size:0.75rem; color:#00ff66; font-weight:bold;">🆕 TẠO GIFT CODE TOÀN SERVER</span>
+            <div style="display:flex; gap:6px;">
+              <input type="text" id="admin-gift-code" class="admin-input" placeholder="MÃ CODE (vd: GM100K)..." style="text-transform:uppercase;">
+              <input type="number" id="admin-gift-gold" class="admin-input" placeholder="Số Vàng thưởng...">
+            </div>
+            <input type="text" id="admin-gift-desc" class="admin-input" placeholder="Mô tả quà tặng (vd: Quà Đền Bù GM)...">
+            <button class="admin-btn" onclick="window.LobbyAdmin.createGiftCode()">TẠO & PHÁT HÀNH</button>
+          </div>
+          
+          <div style="display:flex; flex-direction:column; gap:4px; flex:1; overflow:hidden;">
+            <span style="font-size:0.7rem; color:#8fa0dd; font-weight:bold;">🎫 CÁC CODE ĐANG HOẠT ĐỘNG:</span>
+            <div id="admin-active-codes-list" style="display:flex; flex-direction:column; gap:6px; overflow-y:auto; border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:6px; background:rgba(0,0,0,0.2); max-height:140px;">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🔑 GM AUTHENTICATION POPUP -->
+    <div id="admin-auth-panel" class="admin-auth-overlay">
+      <span style="font-size:0.85rem; color:#00ff66; font-weight:bold; letter-spacing:1px; text-shadow:0 0 5px rgba(0,255,100,0.3);">🔑 XÁC THỰC GM ADMIN</span>
+      <div style="font-size:0.68rem; color:#8fa0dd; margin: 4px 0 8px 0;">Vui lòng nhập mật khẩu quyền lực GM để mở bảng quản trị:</div>
+      <input type="password" id="admin-auth-pass" class="admin-input" placeholder="Mật khẩu GM..." style="text-align:center;">
+      <div id="admin-auth-msg" style="font-size:0.65rem; color:#ff3366; min-height:12px; margin-top:4px;"></div>
+      <div style="display:flex; gap:6px; margin-top:10px;">
+        <button class="admin-btn danger" onclick="window.LobbyAdmin.closeAuth()" style="flex:1;">HỦY</button>
+        <button class="admin-btn" onclick="window.LobbyAdmin.submitAuth()" style="flex:1;">XÁC NHẬN</button>
+      </div>
+    </div>
     </div>
 
     <!-- Fallback Start Menu Screen (In case sảnh load chậm) -->
@@ -249,32 +607,313 @@
 
     <!-- Game Setup Modal (Triggers when Player walks to Portal) -->
     <div id="game-setup-modal" class="screen">
-      <div class="panel" style="max-width: 600px; width: 95%; padding: 2rem; text-align: left;">
-        <h2 style="text-align: center;">VÙNG ĐẤT CHIẾN ĐẤU</h2>
-        <div class="subtitle" style="text-align: center; margin-bottom: 1.5rem;">Chọn bản đồ thế giới và độ khó để tiến vào sinh tồn</div>
-        
-        <div style="margin-bottom: 1.2rem;">
-          <h3 style="font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: #8fa0dd; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 0.5rem;">Chọn bản đồ</h3>
-          <div id="map-selection" class="map-selection-container" style="margin: 0;">
-            <!-- Injected by JS -->
+      <div class="panel" style="max-width: 680px; width: 96%; padding: 0; text-align: left; background: rgba(6,6,20,0.98); border: 1px solid rgba(0,243,255,0.25); border-radius: 18px; overflow: hidden;">
+
+        <!-- Header Banner -->
+        <div style="background: linear-gradient(135deg, rgba(0,243,255,0.12) 0%, rgba(157,0,255,0.1) 100%); border-bottom: 1px solid rgba(0,243,255,0.2); padding: 1.4rem 2rem; text-align:center; position:relative;">
+          <div style="font-family:'Orbitron',sans-serif; font-size:0.7rem; letter-spacing:3px; color:#8fa0dd; text-transform:uppercase; margin-bottom:4px;">⚔ CỔNG CHIẾN ĐẤU ⚔</div>
+          <h2 style="font-size:1.6rem; margin:0; background:linear-gradient(90deg,var(--neon-cyan),#fff,var(--neon-magenta)); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">VÙNG ĐẤT CHIẾN ĐẤU</h2>
+          <div style="font-size:0.75rem; color:#8fa0dd; margin-top:4px;">Cấu hình trận chiến trước khi tiến vào sinh tồn</div>
+        </div>
+
+        <div style="padding: 1.5rem 2rem; display:flex; flex-direction:column; gap:1.4rem; max-height:70vh; overflow-y:auto;">
+
+          <!-- SECTION 1: CHỌN BẢN ĐỒ -->
+          <div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:0.7rem;">
+              <div style="width:22px; height:22px; border-radius:50%; background:rgba(0,243,255,0.15); border:1px solid var(--neon-cyan); display:flex; align-items:center; justify-content:center; font-family:'Orbitron',sans-serif; font-size:0.65rem; color:var(--neon-cyan); font-weight:bold; flex-shrink:0;">1</div>
+              <h3 style="font-family:'Orbitron',sans-serif; font-size:0.8rem; color:var(--neon-cyan); letter-spacing:1px; text-transform:uppercase; margin:0;">CHỌN BẢN ĐỒ</h3>
+            </div>
+            <div id="map-selection" class="map-selection-container" style="margin:0;"></div>
+          </div>
+
+          <!-- SECTION 2: ĐỘ KHÓ -->
+          <div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:0.7rem;">
+              <div style="width:22px; height:22px; border-radius:50%; background:rgba(255,230,0,0.15); border:1px solid var(--neon-yellow); display:flex; align-items:center; justify-content:center; font-family:'Orbitron',sans-serif; font-size:0.65rem; color:var(--neon-yellow); font-weight:bold; flex-shrink:0;">2</div>
+              <h3 style="font-family:'Orbitron',sans-serif; font-size:0.8rem; color:var(--neon-yellow); letter-spacing:1px; text-transform:uppercase; margin:0;">ĐỘ KHÓ &amp; HỆ SỐ VÀNG</h3>
+            </div>
+            <div id="difficulty-selection" style="display:flex; gap:0.6rem; width:100%;">
+              <button class="btn diff-btn selected" data-diff="normal"
+                style="flex:1; padding:0.7rem 0.3rem; border-color:#00ff7f; background:rgba(0,255,127,0.06); color:#00ff7f; display:flex; flex-direction:column; align-items:center; gap:3px; border-radius:10px;">
+                <span style="font-size:1.2rem;">🌿</span>
+                <span style="font-family:'Orbitron',sans-serif; font-size:0.65rem; font-weight:bold;">THƯỜNG</span>
+                <span style="font-size:0.62rem; opacity:0.8;">x1 Vàng</span>
+              </button>
+              <button class="btn diff-btn locked" id="diff-hard-btn" data-diff="hard" disabled
+                style="flex:1; padding:0.7rem 0.3rem; border-color:rgba(255,255,255,0.08); background:rgba(255,255,255,0.01); color:rgba(255,255,255,0.3); cursor:not-allowed; display:flex; flex-direction:column; align-items:center; gap:3px; border-radius:10px;">
+                <span style="font-size:1.2rem;">🔥</span>
+                <span style="font-family:'Orbitron',sans-serif; font-size:0.65rem; font-weight:bold;">KHÓ 🔒</span>
+                <span style="font-size:0.62rem; opacity:0.6;">x2 Vàng</span>
+              </button>
+              <button class="btn diff-btn locked" id="diff-hardcore-btn" data-diff="hardcore" disabled
+                style="flex:1; padding:0.7rem 0.3rem; border-color:rgba(255,255,255,0.08); background:rgba(255,255,255,0.01); color:rgba(255,255,255,0.3); cursor:not-allowed; display:flex; flex-direction:column; align-items:center; gap:3px; border-radius:10px;">
+                <span style="font-size:1.2rem;">💀</span>
+                <span style="font-family:'Orbitron',sans-serif; font-size:0.65rem; font-weight:bold;">SIÊU KHÓ 🔒</span>
+                <span style="font-size:0.62rem; opacity:0.6;">x4 Vàng</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- SECTION 3: SỐ NGƯỜI CHƠI -->
+          <div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:0.7rem;">
+              <div style="width:22px; height:22px; border-radius:50%; background:rgba(157,0,255,0.15); border:1px solid var(--neon-purple,#9d00ff); display:flex; align-items:center; justify-content:center; font-family:'Orbitron',sans-serif; font-size:0.65rem; color:#cc66ff; font-weight:bold; flex-shrink:0;">3</div>
+              <h3 style="font-family:'Orbitron',sans-serif; font-size:0.8rem; color:#cc66ff; letter-spacing:1px; text-transform:uppercase; margin:0;">SỐ NGƯỜI CHƠI</h3>
+            </div>
+            <div style="display:flex; gap:0.6rem; width:100%;" id="player-count-selection">
+              <!-- 1 người -->
+              <button class="player-count-btn selected-pc" data-count="1" onclick="window.selectPlayerCount(1)"
+                style="flex:1; padding:0.8rem 0.3rem; border:2px solid #cc66ff; background:rgba(157,0,255,0.1); color:#cc66ff; border-radius:10px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px; transition:all 0.2s; font-family:'Orbitron',sans-serif;">
+                <div style="font-size:1.3rem;">🧙</div>
+                <div style="font-size:0.65rem; font-weight:bold;">1 NGƯỜI</div>
+                <div style="font-size:0.58rem; opacity:0.75; color:#b0a0ff;">Solo</div>
+              </button>
+              <!-- 2 người -->
+              <button class="player-count-btn" data-count="2" onclick="window.selectPlayerCount(2)"
+                style="flex:1; padding:0.8rem 0.3rem; border:2px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.02); color:rgba(255,255,255,0.5); border-radius:10px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px; transition:all 0.2s; font-family:'Orbitron',sans-serif;">
+                <div style="font-size:1.3rem;">🧙🧙</div>
+                <div style="font-size:0.65rem; font-weight:bold;">2 NGƯỜI</div>
+                <div style="font-size:0.58rem; opacity:0.6;">Đôi bạn</div>
+              </button>
+              <!-- 3 người -->
+              <button class="player-count-btn" data-count="3" onclick="window.selectPlayerCount(3)"
+                style="flex:1; padding:0.8rem 0.3rem; border:2px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.02); color:rgba(255,255,255,0.5); border-radius:10px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px; transition:all 0.2s; font-family:'Orbitron',sans-serif;">
+                <div style="font-size:1.3rem;">🧙🧙🧙</div>
+                <div style="font-size:0.65rem; font-weight:bold;">3 NGƯỜI</div>
+                <div style="font-size:0.58rem; opacity:0.6;">Đội nhỏ</div>
+              </button>
+              <!-- 4 người -->
+              <button class="player-count-btn" data-count="4" onclick="window.selectPlayerCount(4)"
+                style="flex:1; padding:0.8rem 0.3rem; border:2px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.02); color:rgba(255,255,255,0.5); border-radius:10px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px; transition:all 0.2s; font-family:'Orbitron',sans-serif;">
+                <div style="font-size:1.1rem; letter-spacing:-4px;">🧙🧙🧙🧙</div>
+                <div style="font-size:0.65rem; font-weight:bold;">4 NGƯỜI</div>
+                <div style="font-size:0.58rem; opacity:0.6;">Đội đầy</div>
+              </button>
+            </div>
+
+            <!-- Thông tin phòng theo số người -->
+            <div id="player-count-info" style="margin-top:0.7rem; padding:0.6rem 0.9rem; background:rgba(157,0,255,0.07); border:1px solid rgba(157,0,255,0.2); border-radius:8px; font-size:0.75rem; color:#b0a0ff; display:flex; align-items:center; gap:8px;">
+              <span style="font-size:1rem;">🎮</span>
+              <span id="player-count-desc">Solo — Bạn một mình chiến đấu. Quái xuất hiện theo tốc độ tiêu chuẩn.</span>
+            </div>
+          </div>
+
+          <!-- SECTION 4: MỜI BẠN BÈ -->
+          <div id="invite-friends-section">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:0.7rem;">
+              <div style="width:22px; height:22px; border-radius:50%; background:rgba(255,150,0,0.15); border:1px solid #ff9500; display:flex; align-items:center; justify-content:center; font-family:'Orbitron',sans-serif; font-size:0.65rem; color:#ff9500; font-weight:bold; flex-shrink:0;">4</div>
+              <h3 style="font-family:'Orbitron',sans-serif; font-size:0.8rem; color:#ff9500; letter-spacing:1px; text-transform:uppercase; margin:0;">MỜI BẠN BÈ VÀO PHÒNG</h3>
+              <button onclick="window.GameInvite.reloadFriends()" style="margin-left:auto; background:none; border:1px solid rgba(255,149,0,0.3); border-radius:5px; color:#ff9500; padding:2px 7px; font-size:0.62rem; cursor:pointer;">↻ Làm mới</button>
+            </div>
+
+            <!-- Thông báo chế độ Solo -->
+            <div id="room-solo-placeholder" style="color:#8fa0dd; font-size:0.75rem; text-align:center; padding:15px; border:1px dashed rgba(255,255,255,0.08); border-radius:8px; background:rgba(255,255,255,0.01); margin: 0.5rem 0;">
+              ℹ️ Chọn chơi từ 2 người trở lên ở mục 3 để kích hoạt tính năng Tạo Phòng.
+            </div>
+
+            <!-- Nút Tạo Phòng -->
+            <div id="create-room-btn-container" style="display:none; margin:0.6rem 0; text-align:center;">
+              <button onclick="window.GameInvite.generateRoomCode()" style="width:100%; padding:8px; font-size:0.8rem; font-family:'Orbitron',sans-serif; background:rgba(255,149,0,0.12); border:1px solid #ff9500; border-radius:8px; color:#ff9500; cursor:pointer; font-weight:bold; letter-spacing:1px; box-shadow:0 0 10px rgba(255,149,0,0.15); transition:all 0.2s;">
+                ➕ TẠO PHÒNG MỚI
+              </button>
+            </div>
+
+            <!-- Danh sách bạn bè để mời -->
+            <div id="invite-friends-list" style="display:flex; flex-direction:column; gap:6px; max-height:130px; overflow-y:auto; padding-right:3px;">
+              <div style="color:#8fa0dd; font-size:0.75rem; text-align:center; padding:8px;">Đang tải danh sách bạn bè...</div>
+            </div>
+
+            <!-- Mã phòng được tạo -->
+            <div id="room-code-display" style="display:none; margin-top:0.6rem; padding:0.55rem 0.9rem; background:rgba(255,149,0,0.06); border:1px solid rgba(255,149,0,0.25); border-radius:8px; display:none; align-items:center; justify-content:space-between;">
+              <span style="font-size:0.72rem; color:#8fa0dd;">🎮 Mã phòng:</span>
+              <span id="room-code-value" style="font-family:'Orbitron',sans-serif; font-size:0.9rem; color:#ff9500; font-weight:bold; letter-spacing:2px;"></span>
+              <div style="display:flex; gap:6px;">
+                <button onclick="window.GameInvite.copyCode()" style="background:rgba(255,149,0,0.1); border:1px solid rgba(255,149,0,0.3); border-radius:5px; color:#ff9500; padding:3px 8px; font-size:0.62rem; cursor:pointer;">COPY</button>
+                <button id="leave-room-btn" onclick="window.GameInvite.exitRoom()" style="display:none; background:rgba(255,0,85,0.1); border:1px solid rgba(255,0,85,0.3); border-radius:5px; color:#ff5577; padding:3px 8px; font-size:0.62rem; cursor:pointer;">RỜI PHÒNG</button>
+              </div>
+            </div>
+
+            <!-- Danh sách thành viên trong phòng -->
+            <div id="room-members-display" style="display:none; margin-top:0.6rem; padding:0.55rem 0.9rem; background:rgba(0,243,255,0.04); border:1px solid rgba(0,243,255,0.2); border-radius:8px; flex-direction:column; gap:4px;">
+              <span style="font-size:0.72rem; color:#8fa0dd; font-weight:bold;">👥 Thành viên phòng (<span id="room-members-count">1</span>/<span id="room-max-count">1</span>):</span>
+              <div id="room-members-list" style="font-size:0.75rem; color:#fff; display:flex; gap:6px; flex-wrap:wrap; margin-top:4px;"></div>
+            </div>
+          </div>
+
+          <!-- SECTION 5: THAM GIA PHÒNG KHÁC -->
+          <div id="join-room-section" style="border-top:1px dashed rgba(255,255,255,0.1); padding-top:12px; margin-top:5px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:0.7rem;">
+              <div style="width:22px; height:22px; border-radius:50%; background:rgba(0,255,127,0.15); border:1px solid #00ff7f; display:flex; align-items:center; justify-content:center; font-family:'Orbitron',sans-serif; font-size:0.65rem; color:#00ff7f; font-weight:bold; flex-shrink:0;">5</div>
+              <h3 style="font-family:'Orbitron',sans-serif; font-size:0.8rem; color:#00ff7f; letter-spacing:1px; text-transform:uppercase; margin:0;">THAM GIA PHÒNG KHÁC</h3>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <input type="text" id="join-room-input" placeholder="Nhập mã phòng (ví dụ: ABCD)..." style="flex:1; padding:6px 8px; font-size:0.78rem; border-radius:6px; border:1px solid var(--glass-border); background:rgba(10,10,25,0.9); color:#fff; outline:none; text-transform:uppercase; font-family:'Orbitron',sans-serif;">
+              <button onclick="window.GameInvite.joinRoomManually()" style="padding:6px 12px; font-size:0.72rem; font-family:'Orbitron',sans-serif; background:rgba(0,255,127,0.1); border:1px solid #00ff7f; border-radius:6px; color:#00ff7f; cursor:pointer;">VÀO PHÒNG</button>
+            </div>
+            <div id="join-room-message" style="font-size:0.65rem; color:#ff3366; min-height:12px; margin-top:4px;"></div>
+          </div>
+
+          <!-- TỔNG QUAN TRẬN ĐẤU -->
+          <div style="background:rgba(0,243,255,0.04); border:1px solid rgba(0,243,255,0.15); border-radius:10px; padding:0.9rem 1.1rem; display:flex; gap:1.5rem; flex-wrap:wrap; justify-content:space-around;">
+            <div style="text-align:center;">
+              <div style="font-family:'Orbitron',sans-serif; font-size:0.62rem; color:#8fa0dd; letter-spacing:1px; margin-bottom:3px;">HỆ SỐ QUÁI</div>
+              <div id="stat-monster-multi" style="font-family:'Orbitron',sans-serif; font-size:1.1rem; color:var(--neon-magenta); font-weight:bold; text-shadow:0 0 8px var(--neon-magenta);">x1.0</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-family:'Orbitron',sans-serif; font-size:0.62rem; color:#8fa0dd; letter-spacing:1px; margin-bottom:3px;">HỆ SỐ VÀNG</div>
+              <div id="stat-gold-multi" style="font-family:'Orbitron',sans-serif; font-size:1.1rem; color:var(--neon-yellow); font-weight:bold; text-shadow:0 0 8px var(--neon-yellow);">x1.0</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-family:'Orbitron',sans-serif; font-size:0.62rem; color:#8fa0dd; letter-spacing:1px; margin-bottom:3px;">PHÒNG</div>
+              <div id="stat-room-type" style="font-family:'Orbitron',sans-serif; font-size:1.1rem; color:#cc66ff; font-weight:bold; text-shadow:0 0 8px #cc66ff;">Solo</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-family:'Orbitron',sans-serif; font-size:0.62rem; color:#8fa0dd; letter-spacing:1px; margin-bottom:3px;">HP THƯỞNG</div>
+              <div id="stat-hp-bonus" style="font-family:'Orbitron',sans-serif; font-size:1.1rem; color:#00ff7f; font-weight:bold; text-shadow:0 0 8px #00ff7f;">+0%</div>
+            </div>
           </div>
         </div>
 
-        <div style="margin-bottom: 1.5rem;">
-          <h3 style="font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: #8fa0dd; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 0.5rem;">Độ Khó (Hệ Số Vàng)</h3>
-          <div id="difficulty-selection" style="display: flex; gap: 0.5rem; width: 100%;">
-            <button class="btn diff-btn selected" data-diff="normal" style="flex: 1; font-size: 0.7rem; padding: 0.5rem 0.2rem; border-color: #00ff7f; background: rgba(0, 255, 127, 0.05); color: #00ff7f;">THƯỜNG (x1)</button>
-            <button class="btn diff-btn locked" id="diff-hard-btn" data-diff="hard" disabled style="flex: 1; font-size: 0.7rem; padding: 0.5rem 0.2rem; border-color: rgba(255,255,255,0.08); background: rgba(255,255,255,0.01); color: rgba(255,255,255,0.35); cursor: not-allowed;">KHÓ 🔒</button>
-            <button class="btn diff-btn locked" id="diff-hardcore-btn" data-diff="hardcore" disabled style="flex: 1; font-size: 0.7rem; padding: 0.5rem 0.2rem; border-color: rgba(255,255,255,0.08); background: rgba(255,255,255,0.01); color: rgba(255,255,255,0.35); cursor: not-allowed;">SIÊU KHÓ 🔒</button>
-          </div>
-        </div>
-
-        <div style="display: flex; gap: 1rem;">
-          <button id="close-game-setup-btn" class="btn btn-secondary" style="flex: 1; border-color: var(--neon-magenta); color: #fff;">QUAY LẠI</button>
-          <button id="play-btn" class="btn btn-start-game" style="flex: 1.5; border-color: var(--neon-cyan); box-shadow: 0 0 15px rgba(0, 243, 255, 0.3); background: rgba(0, 243, 255, 0.05);">CHIẾN LUÔN</button>
+        <!-- Footer Buttons -->
+        <div style="padding:1rem 2rem; border-top:1px solid rgba(255,255,255,0.06); display:flex; gap:0.8rem; background:rgba(0,0,0,0.3);">
+          <button id="close-game-setup-btn" class="btn btn-secondary" style="flex:1; border-color:rgba(255,255,255,0.15); color:#8fa0dd; padding:0.65rem;">
+            ← QUAY LẠI
+          </button>
+          <button id="play-btn" class="btn btn-start-game"
+            style="flex:2; border-color:var(--neon-cyan); box-shadow:0 0 20px rgba(0,243,255,0.25); background:rgba(0,243,255,0.07); padding:0.65rem; font-size:0.9rem; letter-spacing:2px; position:relative; overflow:hidden;">
+            ⚔ CHIẾN LUÔN
+          </button>
         </div>
       </div>
     </div>
+
+    <!-- Script xử lý số người chơi -->
+    <script>
+    window._selectedPlayerCount = 1;
+
+    const _pcDesc = {
+      1: 'Solo — Một mình chiến đấu. Quái xuất hiện theo tốc độ tiêu chuẩn.',
+      2: 'Đôi bạn — Quái nhiều hơn 50%, vàng x1.5, mỗi người +20% HP.',
+      3: 'Đội nhỏ — Quái nhiều hơn 100%, vàng x2, mỗi người +40% HP.',
+      4: 'Đội đầy — Quái nhiều hơn 150%, vàng x3, mỗi người +60% HP.'
+    };
+    const _pcMonster = { 1:'x1.0', 2:'x1.5', 3:'x2.0', 4:'x2.5' };
+    const _pcGold    = { 1:'x1.0', 2:'x1.5', 3:'x2.0', 4:'x3.0' };
+    const _pcRoom    = { 1:'Solo', 2:'Đôi', 3:'3 người', 4:'4 người' };
+    const _pcHP      = { 1:'+0%', 2:'+20%', 3:'+40%', 4:'+60%' };
+
+    // Khi mở modal cổng chiến đấu, tải danh sách bạn bè hoặc hiển thị nút tạo phòng
+    document.addEventListener('DOMContentLoaded', () => {
+      const modal = document.getElementById('game-setup-modal');
+      if (modal) {
+        const observer = new MutationObserver(() => {
+          if (modal.classList.contains('active')) {
+            const count = window._selectedPlayerCount || 1;
+            const hasRoom = window.GameInvite && window.GameInvite.getRoomCode();
+            
+            const soloPlaceholder = document.getElementById('room-solo-placeholder');
+            const inviteSection = document.getElementById('invite-friends-section');
+            const roomCodeDisp = document.getElementById('room-code-display');
+            const createRoomBtn = document.getElementById('create-room-btn-container');
+            const membersDisp = document.getElementById('room-members-display');
+            const friendsList = document.getElementById('invite-friends-list');
+
+            if (inviteSection) inviteSection.style.display = 'block';
+
+            if (hasRoom) {
+              if (soloPlaceholder) soloPlaceholder.style.display = 'none';
+              if (roomCodeDisp) roomCodeDisp.style.display = 'flex';
+              if (createRoomBtn) createRoomBtn.style.display = 'none';
+              if (membersDisp) membersDisp.style.display = 'flex';
+              
+              const isHost = window.GameInvite.isHost();
+              if (friendsList) friendsList.style.display = isHost ? 'flex' : 'none';
+
+              if (isHost) {
+                window.GameInvite.reloadFriends();
+              }
+            } else {
+              if (count > 1) {
+                if (soloPlaceholder) soloPlaceholder.style.display = 'none';
+                if (createRoomBtn) createRoomBtn.style.display = 'block';
+                if (roomCodeDisp) roomCodeDisp.style.display = 'none';
+                if (membersDisp) membersDisp.style.display = 'none';
+                if (friendsList) friendsList.style.display = 'none';
+              } else {
+                if (soloPlaceholder) soloPlaceholder.style.display = 'block';
+                if (createRoomBtn) createRoomBtn.style.display = 'none';
+                if (roomCodeDisp) roomCodeDisp.style.display = 'none';
+                if (membersDisp) membersDisp.style.display = 'none';
+                if (friendsList) friendsList.style.display = 'none';
+              }
+            }
+          } else {
+            if (typeof gameCtx !== 'undefined' && gameCtx.gameState !== 'PLAYING') {
+              if (window.GameInvite) window.GameInvite.exitRoom();
+            }
+          }
+        });
+        observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
+      }
+    });
+
+    window.selectPlayerCount = function(n) {
+      window._selectedPlayerCount = n;
+      document.querySelectorAll('.player-count-btn').forEach(btn => {
+        const isSelected = parseInt(btn.dataset.count) === n;
+        btn.style.border        = isSelected ? '2px solid #cc66ff' : '2px solid rgba(255,255,255,0.1)';
+        btn.style.background    = isSelected ? 'rgba(157,0,255,0.12)' : 'rgba(255,255,255,0.02)';
+        btn.style.color         = isSelected ? '#cc66ff' : 'rgba(255,255,255,0.5)';
+        btn.style.boxShadow     = isSelected ? '0 0 14px rgba(157,0,255,0.3)' : 'none';
+        btn.style.transform     = isSelected ? 'translateY(-2px)' : 'none';
+      });
+      const desc = document.getElementById('player-count-desc');
+      if (desc) desc.textContent = _pcDesc[n] || '';
+      const sm = document.getElementById('stat-monster-multi');
+      if (sm) sm.textContent = _pcMonster[n];
+      const sg = document.getElementById('stat-gold-multi');
+      if (sg) sg.textContent = _pcGold[n];
+      const sr = document.getElementById('stat-room-type');
+      if (sr) sr.textContent = _pcRoom[n];
+      const sh = document.getElementById('stat-hp-bonus');
+      if (sh) sh.textContent = _pcHP[n];
+
+      // Sync room state to cloud
+      const inviteSection = document.getElementById('invite-friends-section');
+      const roomCodeDisp = document.getElementById('room-code-display');
+      const createRoomBtn = document.getElementById('create-room-btn-container');
+      const membersDisp = document.getElementById('room-members-display');
+      const friendsList = document.getElementById('invite-friends-list');
+      const soloPlaceholder = document.getElementById('room-solo-placeholder');
+
+      const hasRoom = window.GameInvite && window.GameInvite.getRoomCode();
+
+      if (inviteSection) inviteSection.style.display = 'block';
+
+      if (n === 1) {
+        if (soloPlaceholder) soloPlaceholder.style.display = 'block';
+        if (createRoomBtn) createRoomBtn.style.display = 'none';
+        if (roomCodeDisp) roomCodeDisp.style.display = 'none';
+        if (membersDisp) membersDisp.style.display = 'none';
+        if (friendsList) friendsList.style.display = 'none';
+        if (window.GameInvite) window.GameInvite.exitRoom();
+      } else {
+        if (soloPlaceholder) soloPlaceholder.style.display = 'none';
+        if (hasRoom) {
+          if (window.GameInvite.isHost()) {
+            window.GameInvite.updateCloudRoom();
+          }
+        } else {
+          if (createRoomBtn) createRoomBtn.style.display = 'block';
+          if (roomCodeDisp) roomCodeDisp.style.display = 'none';
+          if (membersDisp) membersDisp.style.display = 'none';
+          if (friendsList) friendsList.style.display = 'none';
+        }
+      }
+    };
+    </script>
+
 
     <!-- Central Settings Modal -->
     <div id="settings-modal" class="screen">
@@ -765,27 +1404,7 @@
     </div>
   </div>
 
-  <!-- Backup/Restore Modal -->
-  <div id="backup-modal" class="screen" style="display: none; z-index: 100010; justify-content: center; align-items: center;">
-    <div class="panel" style="max-width: 500px; width: 95%; padding: 2rem; text-align: left; background: rgba(10,10,25,0.92); border: 1px solid var(--glass-border); border-radius: 12px;">
-      <h2 style="text-align: center; color: var(--neon-cyan); text-shadow: 0 0 10px rgba(0, 243, 255, 0.4); font-size: 1.5rem; margin-bottom: 0.5rem; font-family: 'Orbitron', sans-serif;">SAO LƯU & CHUYỂN ACC 📲</h2>
-      <div class="subtitle" style="text-align: center; margin-bottom: 1.5rem; font-size: 0.82rem; color: #8fa0dd;">Sao lưu hoặc chuyển dữ liệu tài khoản sang thiết bị/trình duyệt khác</div>
-      
-      <div id="backup-export-section" style="display: none;">
-        <p style="font-size: 0.8rem; color: #a8b2db; line-height: 1.4; margin-bottom: 8px;">Sao chép mã dưới đây và dán vào phần <strong>Nhập Dữ Liệu</strong> ở thiết bị mới của bạn:</p>
-        <textarea id="backup-code-textarea" readonly style="width: 100%; height: 120px; font-family: monospace; font-size: 0.75rem; background: rgba(0,0,0,0.6); color: #00ff7f; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 10px; box-sizing: border-box; resize: none; outline: none; margin: 10px 0; word-break: break-all; text-shadow: 0 0 3px rgba(0,255,127,0.3);"></textarea>
-        <button id="btn-copy-backup-code" class="btn" style="width: 100%; border-color: var(--neon-cyan); margin-bottom: 0.8rem; padding: 10px;">SAO CHÉP MÃ 📋</button>
-      </div>
 
-      <div id="backup-import-section" style="display: none;">
-        <p style="font-size: 0.8rem; color: #a8b2db; line-height: 1.4; margin-bottom: 8px;">Dán mã sao lưu nhận được từ thiết bị cũ của bạn vào đây:</p>
-        <textarea id="import-code-textarea" placeholder="Dán mã sao lưu tại đây..." style="width: 100%; height: 120px; font-family: monospace; font-size: 0.75rem; background: rgba(0,0,0,0.6); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 10px; box-sizing: border-box; resize: none; outline: none; margin: 10px 0; word-break: break-all;"></textarea>
-        <button id="btn-confirm-import" class="btn" style="width: 100%; border-color: var(--neon-magenta); margin-bottom: 0.8rem; padding: 10px;">XÁC NHẬN NHẬP DỮ LIỆU 📥</button>
-      </div>
-
-      <button id="btn-close-backup-modal" class="btn btn-secondary" style="width: 100%; padding: 10px;">ĐÓNG</button>
-    </div>
-  </div>
 
   <script>
     window.onerror = function(message, source, lineno, colno, error) {
@@ -817,16 +1436,1370 @@
       return false;
     };
   </script>
-  <script src="./js/config.js"></script>
-  <script src="./js/sound.js"></script>
-  <script src="./js/particle.js"></script>
-  <script src="./js/database.js"></script>
-  <script src="./js/bullet.js"></script>
-  <script src="./js/spell.js"></script>
-  <script src="./js/enemy.js"></script>
-  <script src="./js/player.js"></script>
-  <script src="./js/upgrades.js"></script>
-  <script src="./js/ui.js"></script>
-  <script src="./js/game.js"></script>
+  <script src="./js/config.js?v=1.1"></script>
+  <script src="./js/sound.js?v=1.1"></script>
+  <script src="./js/particle.js?v=1.1"></script>
+  <script src="./js/database.js?v=1.1"></script>
+  <script src="./js/bullet.js?v=1.1"></script>
+  <script src="./js/spell.js?v=1.1"></script>
+  <script src="./js/enemy.js?v=1.1"></script>
+  <script src="./js/player.js?v=1.1"></script>
+  <script src="./js/upgrades.js?v=1.1"></script>
+  <script src="./js/ui.js?v=1.1"></script>
+  <script src="./js/game.js?v=1.1"></script>
+  <script src="./js/admin.js?v=1.1"></script>
+
+  <!-- HỆ THỐNG BẠN BÈ LOBBY -->
+  <script>
+  window.LobbyFriends = (() => {
+    let _searchTimeout = null;
+
+    function getUser() {
+      // currentAccount là biến nội bộ của database.js, đọc qua localStorage
+      return window.currentAccount
+        || localStorage.getItem('spellfusion_session')
+        || null;
+    }
+
+    // === MỞ PANEL ===
+    async function open() {
+      const user = getUser();
+      if (!user || user === 'guest') {
+        alert('Bạn cần đăng nhập tài khoản thật để dùng tính năng Bạn Bè!');
+        return;
+      }
+      const panel = document.getElementById('friends-panel');
+      if (panel) { panel.style.display = 'flex'; }
+      document.getElementById('friend-search-input').value = '';
+      document.getElementById('friend-search-result').textContent = '';
+      await refresh();
+    }
+
+    // === ĐÓNG PANEL ===
+    function close() {
+      const panel = document.getElementById('friends-panel');
+      if (panel) panel.style.display = 'none';
+    }
+
+    // === LOAD LỜI MỜI + BẠN BÈ ===
+    async function refresh() {
+      const user = getUser();
+      if (!user) return;
+
+      // Lời mời kết bạn
+      const requests = await window.getFriendRequests(user);
+      const reqSection = document.getElementById('friend-requests-section');
+      const reqList = document.getElementById('friend-requests-list');
+      const badge = document.getElementById('friend-req-badge');
+
+      if (requests.length > 0) {
+        reqSection.style.display = 'flex';
+        badge.style.display = 'inline-block';
+        badge.textContent = requests.length;
+        reqList.innerHTML = requests.map(sender => `
+          <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(255,230,0,0.05); border:1px solid rgba(255,230,0,0.15); border-radius:7px; padding:6px 8px;">
+            <span style="font-size:0.78rem; color:#fff;">⚔️ <strong>${sender}</strong></span>
+            <div style="display:flex; gap:5px;">
+              <button onclick="window.LobbyFriends.accept('${sender}')" style="padding:3px 8px; font-size:0.68rem; font-family:'Orbitron',sans-serif; background:rgba(0,255,127,0.1); border:1px solid #00ff7f; border-radius:5px; color:#00ff7f; cursor:pointer;">✔ Đồng ý</button>
+              <button onclick="window.LobbyFriends.reject('${sender}')" style="padding:3px 8px; font-size:0.68rem; font-family:'Orbitron',sans-serif; background:rgba(255,0,85,0.1); border:1px solid #ff0055; border-radius:5px; color:#ff0055; cursor:pointer;">✖ Từ chối</button>
+            </div>
+          </div>`).join('');
+      } else {
+        reqSection.style.display = 'none';
+        badge.style.display = 'none';
+      }
+
+      // Danh sách bạn bè
+      const friends = await window.getFriendList(user);
+      const friendsList = document.getElementById('friends-list');
+      if (friends.length === 0) {
+        friendsList.innerHTML = `<div style="color:#8fa0dd; font-size:0.75rem; text-align:center; padding:10px 0;">Chưa có bạn bè nào. Hãy tìm kiếm và kết bạn!</div>`;
+      } else {
+        friendsList.innerHTML = friends.map(f => `
+          <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(0,243,255,0.04); border:1px solid rgba(0,243,255,0.12); border-radius:7px; padding:6px 8px;">
+            <span style="font-size:0.78rem; color:#fff;">🧙 <strong style="color:var(--neon-cyan);">${f}</strong></span>
+            <div style="display:flex; gap:5px;">
+              <button onclick="window.LobbyGift.open('${f}')" style="padding:3px 7px; font-size:0.62rem; font-family:'Orbitron',sans-serif; background:rgba(255,149,0,0.1); border:1px solid #ff9500; border-radius:5px; color:#ff9500; cursor:pointer;">🎁 Tặng</button>
+              <button onclick="window.LobbyFriends.remove('${f}')" style="padding:3px 7px; font-size:0.62rem; font-family:'Orbitron',sans-serif; background:rgba(255,0,85,0.08); border:1px solid rgba(255,0,85,0.3); border-radius:5px; color:#ff6688; cursor:pointer;">Hủy bạn</button>
+            </div>
+          </div>`).join('');
+      }
+    }
+
+    // === TÌM KIẾM (gõ tức thì) ===
+    function onSearchInput(val) {
+      clearTimeout(_searchTimeout);
+      const result = document.getElementById('friend-search-result');
+      if (!val || val.length < 2) { result.textContent = ''; return; }
+      result.innerHTML = '<span style="color:#8fa0dd;">Đang tìm...</span>';
+      _searchTimeout = setTimeout(() => search(), 600);
+    }
+
+    // === TÌM KIẾM (bấm nút TÌM) ===
+    async function search() {
+      const user = getUser();
+      const input = document.getElementById('friend-search-input');
+      const result = document.getElementById('friend-search-result');
+      const target = (input.value || '').trim().toLowerCase();
+      if (!target || target.length < 2) {
+        result.textContent = 'Nhập ít nhất 2 ký tự!';
+        return;
+      }
+      if (target === user) {
+        result.textContent = 'Đó là bạn rồi 😅';
+        return;
+      }
+
+      result.innerHTML = '<span style="color:#8fa0dd;">Đang tìm...</span>';
+
+      let res;
+      try { res = await window.searchPlayer(target); }
+      catch(e) { res = { found: false, error: true }; }
+
+      if (!res || (!res.found && res.error)) {
+        result.innerHTML = `<span style="color:#ff9500;">⚠️ Lỗi kết nối server — thử lại sau!</span>`;
+        return;
+      }
+      if (!res.found) {
+        result.innerHTML = `<span style="color:var(--neon-magenta);">❌ Không tìm thấy "<strong>${target}</strong>".<br><span style="font-size:0.7rem; opacity:0.8;">Kiểm tra đúng tên (chỉ chữ thường, không dấu) và người đó cần đã đăng nhập online ít nhất 1 lần.</span></span>`;
+        return;
+      }
+
+      const foundName = res.username || target;
+
+      // Kiểm tra đã bạn chưa
+      const myFriends = await window.getFriendList(user);
+      if (myFriends.includes(foundName)) {
+        result.innerHTML = `<div style="display:flex; align-items:center; gap:8px; background:rgba(0,255,127,0.06); border:1px solid rgba(0,255,127,0.2); border-radius:7px; padding:6px 8px;">
+          <span style="font-size:0.78rem; color:#fff;">🧙 <strong style="color:var(--neon-cyan);">${foundName}</strong></span>
+          <span style="font-size:0.7rem; color:#00ff7f;">✔ Đã là bạn bè</span>
+        </div>`;
+        return;
+      }
+
+      result.innerHTML = `<div style="display:flex; align-items:center; justify-content:space-between; background:rgba(0,243,255,0.04); border:1px solid rgba(0,243,255,0.15); border-radius:7px; padding:6px 8px;">
+        <span style="font-size:0.78rem; color:#fff;">🧙 <strong style="color:var(--neon-cyan);">${foundName}</strong></span>
+        <button onclick="window.LobbyFriends.sendReq('${foundName}')" style="padding:4px 10px; font-size:0.68rem; font-family:'Orbitron',sans-serif; background:rgba(0,243,255,0.1); border:1px solid var(--neon-cyan); border-radius:5px; color:var(--neon-cyan); cursor:pointer; white-space:nowrap;">+ Kết bạn</button>
+      </div>`;
+    }
+
+    // === GỬI LỜI MỜI ===
+    async function sendReq(toUser) {
+      const user = getUser();
+      const result = document.getElementById('friend-search-result');
+      result.innerHTML = '<span style="color:#8fa0dd;">Đang gửi...</span>';
+      const res = await window.sendFriendRequest(user, toUser);
+      result.innerHTML = `<span style="color:${res.success ? '#00ff7f' : 'var(--neon-magenta)'};">${res.msg}</span>`;
+    }
+
+    // === CHẤP NHẬN ===
+    async function accept(fromUser) {
+      const user = getUser();
+      await window.acceptFriendRequest(user, fromUser);
+      await refresh();
+    }
+
+    // === TỪ CHỐI ===
+    async function reject(fromUser) {
+      const user = getUser();
+      await window.rejectFriendRequest(user, fromUser);
+      await refresh();
+    }
+
+    // === XÓA BẠN ===
+    async function remove(friendUser) {
+      if (!confirm(`Hủy kết bạn với ${friendUser}?`)) return;
+      const user = getUser();
+      await window.removeFriend(user, friendUser);
+      await refresh();
+    }
+
+    // === Tự động kiểm tra lời mời khi vào sảnh ===
+    async function checkBadge() {
+      const user = getUser();
+      if (!user || user === 'guest') return;
+      try {
+        const requests = await window.getFriendRequests(user);
+        const badge = document.getElementById('friend-req-badge');
+        if (!badge) return;
+        if (requests.length > 0) {
+          badge.style.display = 'inline-block';
+          badge.textContent = requests.length;
+        } else {
+          badge.style.display = 'none';
+        }
+      } catch(e) {}
+    }
+
+    // Kiểm tra lời mời mỗi 30 giây khi đang ở lobby
+    setInterval(() => {
+      const lobbyHud = document.getElementById('lobby-hud');
+      if (lobbyHud && lobbyHud.style.display !== 'none') {
+        checkBadge();
+      }
+    }, 30000);
+
+    return { open, close, refresh, onSearchInput, search, sendReq, accept, reject, remove, checkBadge };
+  })();
+  </script>
+
+  <!-- HỆ THỐNG MỜI VÀO PHÒNG -->
+  <script>
+  window.GameInvite = (() => {
+    let _currentRoomCode = null;
+    let _isHost = false;
+    let _pollInterval = null;
+    let _roomPlayers = [];
+    let _inviteTimer = null;
+    let _inviteCount = 20;
+    let _invitedUser = null;
+
+    const _pcDesc = {
+      1: 'Solo — Một mình chiến đấu. Quái xuất hiện theo tốc độ tiêu chuẩn.',
+      2: 'Đôi bạn — Quái nhiều hơn 50%, vàng x1.5, mỗi người +20% HP.',
+      3: 'Đội nhỏ — Quái nhiều hơn 100%, vàng x2, mỗi người +40% HP.',
+      4: 'Đội đầy — Quái nhiều hơn 150%, vàng x3, mỗi người +60% HP.'
+    };
+    const _pcMonster = { 1:'x1.0', 2:'x1.5', 3:'x2.0', 4:'x2.5' };
+    const _pcGold    = { 1:'x1.0', 2:'x1.5', 3:'x2.0', 4:'x3.0' };
+    const _pcRoom    = { 1:'Solo', 2:'Đôi', 3:'3 người', 4:'4 người' };
+    const _pcHP      = { 1:'+0%', 2:'+20%', 3:'+40%', 4:'+60%' };
+
+    function getUser() {
+      return window.currentAccount || localStorage.getItem('spellfusion_session') || null;
+    }
+
+    // Tạo mã phòng ngẫu nhiên
+    async function generateRoomCode() {
+      if (_currentRoomCode && _isHost) return _currentRoomCode;
+
+      _currentRoomCode = Math.random().toString(36).substring(2, 7).toUpperCase();
+      _isHost = true;
+      _roomPlayers = [getUser()];
+
+      const el = document.getElementById('room-code-value');
+      const box = document.getElementById('room-code-display');
+      if (el) el.textContent = _currentRoomCode;
+      if (box) box.style.display = 'flex';
+
+      const leaveBtn = document.getElementById('leave-room-btn');
+      if (leaveBtn) {
+        leaveBtn.style.display = 'inline-block';
+        leaveBtn.textContent = 'HỦY PHÒNG';
+      }
+
+      const membersDisp = document.getElementById('room-members-display');
+      if (membersDisp) membersDisp.style.display = 'flex';
+
+      const joinSection = document.getElementById('join-room-section');
+      if (joinSection) joinSection.style.display = 'none';
+
+      const createRoomBtn = document.getElementById('create-room-btn-container');
+      if (createRoomBtn) createRoomBtn.style.display = 'none';
+
+      const soloPlaceholder = document.getElementById('room-solo-placeholder');
+      if (soloPlaceholder) soloPlaceholder.style.display = 'none';
+
+      const friendsList = document.getElementById('invite-friends-list');
+      if (friendsList) friendsList.style.display = 'flex';
+
+      await updateCloudRoom();
+      startRoomPolling(_currentRoomCode);
+
+      // Tự động tải danh sách bạn bè
+      reloadFriends();
+
+      return _currentRoomCode;
+    }
+
+    // Copy mã phòng
+    function copyCode() {
+      if (!_currentRoomCode) return;
+      navigator.clipboard.writeText(_currentRoomCode).then(() => {
+        const el = document.getElementById('room-code-value');
+        if (el) { const old = el.textContent; el.textContent = 'COPIED!'; setTimeout(() => el.textContent = old, 1200); }
+      }).catch(() => prompt('Mã phòng của bạn:', _currentRoomCode));
+    }
+
+    // Load danh sách bạn bè vào invite section
+    async function reloadFriends() {
+      const user = getUser();
+      const list = document.getElementById('invite-friends-list');
+      if (!list) return;
+      if (!user || user === 'guest') {
+        list.innerHTML = '<div style="color:#8fa0dd; font-size:0.75rem; text-align:center; padding:8px;">Đăng nhập tài khoản thật để mời bạn bè.</div>';
+        return;
+      }
+
+      const maxPlayers = window._selectedPlayerCount || 2;
+      const isFull = _currentRoomCode && _roomPlayers.length >= maxPlayers;
+
+      list.innerHTML = '<div style="color:#8fa0dd; font-size:0.75rem; text-align:center; padding:8px;">Đang tải...</div>';
+      try {
+        const friends = await window.getFriendList(user);
+        if (!friends || friends.length === 0) {
+          list.innerHTML = '<div style="color:#8fa0dd; font-size:0.75rem; text-align:center; padding:8px;">Chưa có bạn bè. Kết bạn trước rồi mời vào phòng!</div>';
+          return;
+        }
+
+        list.innerHTML = friends.map(f => {
+          const btnText = isFull ? 'Phòng đầy' : '📨 Mời';
+          const isDisabled = isFull ? 'disabled' : '';
+          const btnStyle = isFull 
+            ? 'background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); color:rgba(255,255,255,0.3); cursor:not-allowed;'
+            : 'background:rgba(255,149,0,0.1); border:1px solid #ff9500; color:#ff9500; cursor:pointer;';
+
+          return `
+            <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(255,149,0,0.04); border:1px solid rgba(255,149,0,0.15); border-radius:8px; padding:6px 10px; margin-top: 4px;">
+              <span style="font-size:0.78rem; color:#fff;">🧙 <strong style="color:#ff9500;">${f}</strong></span>
+              <button id="invite-btn-${f}" ${isDisabled} onclick="window.GameInvite.invite('${f}')" style="padding:3px 10px; font-size:0.67rem; font-family:'Orbitron',sans-serif; border-radius:5px; white-space:nowrap; ${btnStyle}">
+                ${btnText}
+              </button>
+            </div>`;
+        }).join('');
+      } catch(e) {
+        list.innerHTML = '<div style="color:#ff9500; font-size:0.75rem; text-align:center; padding:8px;">⚠️ Lỗi kết nối — thử làm mới.</div>';
+      }
+    }
+
+    // Gửi lời mời vào phòng
+    async function invite(toUser) {
+      const user = getUser();
+      if (!user) return;
+      if (!_currentRoomCode) { await generateRoomCode(); }
+
+      const maxPlayers = window._selectedPlayerCount || 2;
+      if (_roomPlayers.length >= maxPlayers) {
+        alert('Phòng đã đầy, không thể mời thêm!');
+        return;
+      }
+
+      const code = _currentRoomCode;
+      const btn = document.getElementById(`invite-btn-${toUser}`);
+      if (btn) { btn.textContent = '⏳ Đang gửi...'; btn.disabled = true; }
+
+      const inviteData = JSON.stringify({ from: user, roomCode: code, time: Date.now() });
+      const ok = await window.dbSet ? dbSet(`usr_${toUser}_ginvite`, inviteData) : false;
+
+      if (btn) {
+        btn.textContent = ok ? '✅ Đã mời!' : '❌ Lỗi';
+        btn.style.color = ok ? '#00ff7f' : '#ff3366';
+        btn.style.borderColor = ok ? '#00ff7f' : '#ff3366';
+        setTimeout(() => {
+          const stillFull = _roomPlayers.length >= (window._selectedPlayerCount || 2);
+          if (stillFull) {
+            btn.textContent = 'Phòng đầy';
+            btn.disabled = true;
+            btn.style.color = 'rgba(255,255,255,0.3)';
+            btn.style.borderColor = 'rgba(255,255,255,0.15)';
+            btn.style.background = 'rgba(255,255,255,0.05)';
+          } else {
+            btn.textContent = '📨 Mời lại';
+            btn.disabled = false;
+            btn.style.color = '#ff9500';
+            btn.style.borderColor = '#ff9500';
+            btn.style.background = 'rgba(255,149,0,0.1)';
+          }
+        }, 3000);
+      }
+
+      if (ok) {
+        showInviteWaitingPopup(toUser);
+      }
+    }
+
+    // Hiện popup đếm ngược chờ bạn đồng ý 20s
+    function showInviteWaitingPopup(toUser) {
+      closeInviteWaitingPopup();
+
+      _invitedUser = toUser;
+      _inviteCount = 20;
+
+      const popup = document.createElement('div');
+      popup.id = 'invite-waiting-overlay';
+      popup.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; z-index:10000; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);';
+      popup.innerHTML = `
+        <div style="background:rgba(10,10,28,0.98); border:2px solid #ff9500; border-radius:18px; padding:2rem; width:90%; max-width:400px; text-align:center; box-shadow:0 0 40px rgba(255,149,0,0.3); font-family:\'Outfit\',sans-serif;">
+          <div style="font-family:\'Orbitron\',sans-serif; font-size:0.75rem; color:#ff9500; letter-spacing:2px; margin-bottom:8px; text-transform:uppercase;">⏳ ĐANG CHỜ PHẢN HỒI</div>
+          <h3 style="font-size:1.1rem; color:#fff; margin:0 0 10px 0;">Đang chờ <span style="color:#ff9500;">${toUser}</span> vào phòng...</h3>
+          
+          <div id="invite-countdown" style="font-family:\'Orbitron\',sans-serif; font-size:3rem; font-weight:bold; color:#ff9500; margin:1.5rem 0;">20</div>
+          
+          <div style="font-size:0.78rem; color:#8fa0dd; margin-bottom:1.5rem;">Lời mời sẽ tự động hủy sau khi hết thời gian chờ.</div>
+          
+          <button onclick="window.GameInvite.cancelInvite(false)" style="padding:10px 24px; font-size:0.85rem; font-family:\'Orbitron\',sans-serif; background:rgba(255,0,85,0.1); border:1px solid #ff3366; border-radius:8px; color:#ff3366; cursor:pointer; font-weight:bold; width:100%; transition:all 0.2s;">
+            HỦY LỜI MỜI
+          </button>
+        </div>`;
+      document.body.appendChild(popup);
+
+      _inviteTimer = setInterval(() => {
+        _inviteCount--;
+        const el = document.getElementById('invite-countdown');
+        if (el) el.textContent = _inviteCount;
+
+        if (_inviteCount <= 0) {
+          cancelInvite(true);
+        }
+      }, 1000);
+    }
+
+    function closeInviteWaitingPopup() {
+      if (_inviteTimer) {
+        clearInterval(_inviteTimer);
+        _inviteTimer = null;
+      }
+      const overlay = document.getElementById('invite-waiting-overlay');
+      if (overlay) overlay.remove();
+    }
+
+    async function cancelInvite(isTimeout = false) {
+      closeInviteWaitingPopup();
+      if (_invitedUser) {
+        try {
+          await dbSet(`usr_${_invitedUser}_ginvite`, '');
+        } catch(e) {}
+        
+        if (isTimeout) {
+          alert(`Không có phản hồi từ ${_invitedUser} hoặc lời mời đã hết hạn!`);
+        }
+        _invitedUser = null;
+      }
+    }
+
+    // Cập nhật cài đặt phòng lên cloud
+    async function updateCloudRoom() {
+      if (!_isHost || !_currentRoomCode) return;
+      const user = getUser();
+      if (!user) return;
+
+      const roomData = {
+        host: user,
+        map: gameCtx.currentMap || 'forest',
+        difficulty: gameCtx.currentDifficulty || 'normal',
+        playerCount: window._selectedPlayerCount || 2,
+        players: _roomPlayers.length > 0 ? _roomPlayers : [user],
+        time: Date.now()
+      };
+
+      try {
+        await dbSet(`room_${_currentRoomCode}`, JSON.stringify(roomData));
+      } catch(e) {
+        console.error("Lỗi đồng bộ phòng lên Cloud:", e);
+      }
+    }
+
+    // Bắt đầu polling
+    function startRoomPolling(code) {
+      if (_pollInterval) clearInterval(_pollInterval);
+      pollRoom(code);
+      _pollInterval = setInterval(() => pollRoom(code), 3000);
+    }
+
+    // Polling phòng
+    async function pollRoom(code) {
+      if (typeof gameCtx !== 'undefined' && gameCtx.gameState === 'PLAYING') {
+        if (_pollInterval) {
+          clearInterval(_pollInterval);
+          _pollInterval = null;
+        }
+        return;
+      }
+      try {
+        const raw = await dbGet(`room_${code}`);
+        if (!raw) {
+          if (!_isHost) {
+            alert('Phòng đã bị giải tán bởi chủ phòng!');
+            exitRoom();
+          }
+          return;
+        }
+
+        let roomData;
+        try {
+          roomData = JSON.parse(raw);
+        } catch(e) {
+          return;
+        }
+
+        // Kiểm tra hết hạn (> 15 phút)
+        if (Date.now() - roomData.time > 15 * 60 * 1000) {
+          if (!_isHost) {
+            alert('Phòng đã hết hạn do không hoạt động!');
+            exitRoom();
+          } else {
+            updateCloudRoom();
+          }
+          return;
+        }
+
+        // Cập nhật người chơi
+        const oldPlayersLength = _roomPlayers.length;
+        _roomPlayers = roomData.players || [];
+
+        // Kiểm tra nếu có người chơi gia nhập phòng
+        if (_roomPlayers.length > oldPlayersLength && _invitedUser) {
+          const joinedUser = _roomPlayers.find(p => p !== getUser());
+          if (joinedUser) {
+            closeInviteWaitingPopup();
+            _invitedUser = null;
+            alert(`${joinedUser} đã tham gia phòng chơi!`);
+          }
+        }
+
+        // Cập nhật UI phòng
+        const countEl = document.getElementById('room-members-count');
+        const maxEl = document.getElementById('room-max-count');
+        const listEl = document.getElementById('room-members-list');
+
+        if (countEl) countEl.textContent = _roomPlayers.length;
+        if (maxEl) maxEl.textContent = roomData.playerCount;
+
+        if (listEl) {
+          const user = getUser();
+          listEl.innerHTML = _roomPlayers.map((p, idx) => {
+            const isMe = p === user;
+            const isHostPlayer = idx === 0;
+            let nameStr = p;
+            if (isHostPlayer) nameStr = `👑 ${nameStr}`;
+            else nameStr = `🧙 ${nameStr}`;
+            if (isMe) nameStr += ` (Bạn)`;
+            return `<span style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:6px; padding:3px 8px; font-size:0.72rem; color:${isMe ? '#ff9500' : '#fff'};">${nameStr}</span>`;
+          }).join('');
+        }
+
+        if (_isHost) {
+          updateCloudRoom();
+
+          // Cập nhật trạng thái phòng đầy của các nút mời
+          const list = document.getElementById('invite-friends-list');
+          if (list && !list.innerHTML.includes('Đang tải...')) {
+            const isFull = _roomPlayers.length >= roomData.playerCount;
+            document.querySelectorAll('[id^="invite-btn-"]').forEach(btn => {
+              if (isFull) {
+                btn.textContent = 'Phòng đầy';
+                btn.disabled = true;
+                btn.style.cssText = "padding:3px 10px; font-size:0.67rem; font-family:'Orbitron',sans-serif; border-radius:5px; white-space:nowrap; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); color:rgba(255,255,255,0.3); cursor:not-allowed;";
+              } else if (btn.textContent === 'Phòng đầy') {
+                btn.textContent = '📨 Mời';
+                btn.disabled = false;
+                btn.style.cssText = "padding:3px 10px; font-size:0.67rem; font-family:'Orbitron',sans-serif; border-radius:5px; white-space:nowrap; background:rgba(255,149,0,0.1); border:1px solid #ff9500; color:#ff9500; cursor:pointer;";
+              }
+            });
+          }
+        } else {
+          // Guest đồng bộ từ Host
+          const myUser = getUser();
+          if (!_roomPlayers.includes(myUser)) {
+            alert('Bạn đã bị mời ra khỏi phòng!');
+            exitRoom();
+            return;
+          }
+
+          if (roomData.map && gameCtx.currentMap !== roomData.map) {
+            gameCtx.currentMap = roomData.map;
+            document.querySelectorAll('.map-card').forEach(c => {
+              if (c.classList.contains(`map-${roomData.map}`)) {
+                c.classList.add('selected');
+              } else {
+                c.classList.remove('selected');
+              }
+            });
+          }
+
+          if (roomData.difficulty && gameCtx.currentDifficulty !== roomData.difficulty) {
+            gameCtx.currentDifficulty = roomData.difficulty;
+            updateDifficultyUI();
+          }
+
+          if (roomData.playerCount && window._selectedPlayerCount !== roomData.playerCount) {
+            window._selectedPlayerCount = roomData.playerCount;
+            document.querySelectorAll('.player-count-btn').forEach(btn => {
+              const isSelected = parseInt(btn.dataset.count) === roomData.playerCount;
+              btn.style.border        = isSelected ? '2px solid #cc66ff' : '2px solid rgba(255,255,255,0.1)';
+              btn.style.background    = isSelected ? 'rgba(157,0,255,0.12)' : 'rgba(255,255,255,0.02)';
+              btn.style.color         = isSelected ? '#cc66ff' : 'rgba(255,255,255,0.5)';
+              btn.style.boxShadow     = isSelected ? '0 0 14px rgba(157,0,255,0.3)' : 'none';
+              btn.style.transform     = isSelected ? 'translateY(-2px)' : 'none';
+            });
+            const desc = document.getElementById('player-count-desc');
+            if (desc) desc.textContent = _pcDesc[roomData.playerCount] || '';
+            const sm = document.getElementById('stat-monster-multi');
+            if (sm) sm.textContent = _pcMonster[roomData.playerCount];
+            const sg = document.getElementById('stat-gold-multi');
+            if (sg) sg.textContent = _pcGold[roomData.playerCount];
+            const sr = document.getElementById('stat-room-type');
+            if (sr) sr.textContent = _pcRoom[roomData.playerCount];
+            const sh = document.getElementById('stat-hp-bonus');
+            if (sh) sh.textContent = _pcHP[roomData.playerCount];
+          }
+
+          // Khóa chỉnh sửa của Guest
+          const mapSelection = document.getElementById('map-selection');
+          const diffSelection = document.getElementById('difficulty-selection');
+          const pcSelection = document.getElementById('player-count-selection');
+
+          if (mapSelection) mapSelection.style.pointerEvents = 'none';
+          if (diffSelection) diffSelection.style.pointerEvents = 'none';
+          if (pcSelection) pcSelection.style.pointerEvents = 'none';
+        }
+      } catch(e) {
+        console.error("Lỗi polling phòng:", e);
+      }
+    }
+
+    // Vào phòng thủ công
+    async function joinRoomManually() {
+      const input = document.getElementById('join-room-input');
+      const msgEl = document.getElementById('join-room-message');
+      if (msgEl) msgEl.textContent = '';
+
+      if (!input) return;
+      const code = input.value.trim().toUpperCase();
+      if (!code) {
+        if (msgEl) msgEl.textContent = 'Vui lòng nhập mã phòng!';
+        return;
+      }
+
+      const user = getUser();
+      if (!user || user === 'guest') {
+        if (msgEl) msgEl.textContent = 'Vui lòng đăng nhập tài khoản thật!';
+        return;
+      }
+
+      if (msgEl) msgEl.textContent = '⏳ Đang kiểm tra phòng...';
+
+      try {
+        const raw = await dbGet(`room_${code}`);
+        if (!raw) {
+          if (msgEl) msgEl.textContent = 'Mã phòng không tồn tại hoặc đã hết hạn!';
+          return;
+        }
+
+        const roomData = JSON.parse(raw);
+        if (Date.now() - roomData.time > 15 * 60 * 1000) {
+          if (msgEl) msgEl.textContent = 'Phòng đã hết hạn!';
+          return;
+        }
+
+        if (roomData.players.length >= roomData.playerCount) {
+          if (msgEl) msgEl.textContent = 'Phòng đã đầy!';
+          return;
+        }
+
+        if (!roomData.players.includes(user)) {
+          roomData.players.push(user);
+        }
+
+        roomData.time = Date.now();
+        await dbSet(`room_${code}`, JSON.stringify(roomData));
+
+        _currentRoomCode = code;
+        _isHost = false;
+        _roomPlayers = roomData.players;
+
+        const el = document.getElementById('room-code-value');
+        const box = document.getElementById('room-code-display');
+        if (el) el.textContent = _currentRoomCode;
+        if (box) box.style.display = 'flex';
+
+        const leaveBtn = document.getElementById('leave-room-btn');
+        if (leaveBtn) {
+          leaveBtn.style.display = 'inline-block';
+          leaveBtn.textContent = 'RỜI PHÒNG';
+        }
+
+        const membersDisp = document.getElementById('room-members-display');
+        if (membersDisp) membersDisp.style.display = 'flex';
+
+        const joinSection = document.getElementById('join-room-section');
+        if (joinSection) joinSection.style.display = 'none';
+
+        const inviteSection = document.getElementById('invite-friends-section');
+        if (inviteSection) inviteSection.style.display = 'none';
+
+        const createRoomBtn = document.getElementById('create-room-btn-container');
+        if (createRoomBtn) createRoomBtn.style.display = 'none';
+
+        if (msgEl) msgEl.textContent = '';
+        input.value = '';
+
+        startRoomPolling(code);
+
+      } catch(e) {
+        if (msgEl) msgEl.textContent = '⚠️ Lỗi kết nối cloud!';
+        console.error(e);
+      }
+    }
+
+    // Nhận lời mời từ popup góc màn hình
+    async function joinRoomFromInvitePopup(roomCode) {
+      // 1. Mở modal cổng chiến đấu
+      const gameSetupModal = document.getElementById('game-setup-modal');
+      if (gameSetupModal) {
+        setupMapSelection(MAPS);
+        setupDifficultySelection();
+        updateDifficultyUI();
+        gameSetupModal.classList.add('active');
+        gameCtx.gameState = 'LOBBY_MODAL';
+      }
+      // 2. Điền mã phòng vào input
+      const input = document.getElementById('join-room-input');
+      if (input) input.value = roomCode;
+      // 3. Thực hiện join room
+      await joinRoomManually();
+    }
+
+    // Thoát hoặc hủy phòng
+    async function exitRoom() {
+      if (!_currentRoomCode) return;
+      const code = _currentRoomCode;
+
+      closeInviteWaitingPopup();
+
+      if (_pollInterval) {
+        clearInterval(_pollInterval);
+        _pollInterval = null;
+      }
+
+      const user = getUser();
+
+      if (_isHost) {
+        try {
+          await dbSet(`room_${code}`, '');
+        } catch(e) {}
+      } else {
+        try {
+          const raw = await dbGet(`room_${code}`);
+          if (raw) {
+            const roomData = JSON.parse(raw);
+            roomData.players = roomData.players.filter(p => p !== user);
+            roomData.time = Date.now();
+            await dbSet(`room_${code}`, JSON.stringify(roomData));
+          }
+        } catch(e) {}
+      }
+
+      _currentRoomCode = null;
+      _isHost = false;
+      _roomPlayers = [];
+
+      const mapSelection = document.getElementById('map-selection');
+      const diffSelection = document.getElementById('difficulty-selection');
+      const pcSelection = document.getElementById('player-count-selection');
+
+      if (mapSelection) mapSelection.style.pointerEvents = 'auto';
+      if (diffSelection) diffSelection.style.pointerEvents = 'auto';
+      if (pcSelection) pcSelection.style.pointerEvents = 'auto';
+
+      const box = document.getElementById('room-code-display');
+      if (box) box.style.display = 'none';
+
+      const leaveBtn = document.getElementById('leave-room-btn');
+      if (leaveBtn) leaveBtn.style.display = 'none';
+
+      const membersDisp = document.getElementById('room-members-display');
+      if (membersDisp) membersDisp.style.display = 'none';
+
+      const inviteSection = document.getElementById('invite-friends-section');
+      if (inviteSection) inviteSection.style.display = 'block';
+
+      const soloPlaceholder = document.getElementById('room-solo-placeholder');
+      if (soloPlaceholder) soloPlaceholder.style.display = 'block';
+
+      const createRoomBtn = document.getElementById('create-room-btn-container');
+      if (createRoomBtn) createRoomBtn.style.display = 'none';
+
+      const friendsList = document.getElementById('invite-friends-list');
+      if (friendsList) friendsList.style.display = 'none';
+
+      const joinSection = document.getElementById('join-room-section');
+      if (joinSection) joinSection.style.display = 'block';
+
+      // Reset về Solo
+      window._selectedPlayerCount = 1;
+      document.querySelectorAll('.player-count-btn').forEach(btn => {
+        const isSelected = parseInt(btn.dataset.count) === 1;
+        btn.style.border        = isSelected ? '2px solid #cc66ff' : '2px solid rgba(255,255,255,0.1)';
+        btn.style.background    = isSelected ? 'rgba(157,0,255,0.12)' : 'rgba(255,255,255,0.02)';
+        btn.style.color         = isSelected ? '#cc66ff' : 'rgba(255,255,255,0.5)';
+        btn.style.boxShadow     = isSelected ? '0 0 14px rgba(157,0,255,0.3)' : 'none';
+        btn.style.transform     = isSelected ? 'translateY(-2px)' : 'none';
+      });
+      const desc = document.getElementById('player-count-desc');
+      if (desc) desc.textContent = _pcDesc[1] || '';
+      const sm = document.getElementById('stat-monster-multi');
+      if (sm) sm.textContent = _pcMonster[1];
+      const sg = document.getElementById('stat-gold-multi');
+      if (sg) sg.textContent = _pcGold[1];
+      const sr = document.getElementById('stat-room-type');
+      if (sr) sr.textContent = _pcRoom[1];
+      const sh = document.getElementById('stat-hp-bonus');
+      if (sh) sh.textContent = _pcHP[1];
+    }
+
+    // Kiểm tra lời mời vào phòng (gọi mỗi 20 giây khi ở sảnh)
+    async function checkGameInvite() {
+      const user = getUser();
+      if (!user || user === 'guest') return;
+      if (_currentRoomCode) return;
+
+      try {
+        const raw = await dbGet(`usr_${user}_ginvite`);
+        if (!raw) return;
+        let data;
+        try { data = JSON.parse(raw); } catch(e) { return; }
+        // Chỉ hiện lời mời trong vòng 2 phút
+        if (!data || Date.now() - data.time > 120000) return;
+
+        await dbSet(`usr_${user}_ginvite`, '');
+        showInvitePopup(data.from, data.roomCode);
+      } catch(e) {}
+    }
+
+    // Hiện popup lời mời bên góc màn hình 20s
+    function showInvitePopup(from, roomCode) {
+      const existing = document.getElementById('game-invite-popup');
+      if (existing) existing.remove();
+
+      const popup = document.createElement('div');
+      popup.id = 'game-invite-popup';
+      popup.style.cssText = 'position:fixed; bottom:24px; right:24px; z-index:9999; background:rgba(10,10,28,0.97); border:1px solid #ff9500; border-radius:14px; padding:16px 18px; min-width:260px; box-shadow:0 0 30px rgba(255,149,0,0.25); animation: slideInRight 0.3s ease;';
+      popup.innerHTML = `
+        <style>@keyframes slideInRight{from{transform:translateX(120px);opacity:0}to{transform:none;opacity:1}}</style>
+        <div style="font-family:\'Orbitron\',sans-serif; font-size:0.68rem; color:#ff9500; letter-spacing:1px; margin-bottom:6px;">📨 LỜI MỜI VÀO PHÒNG</div>
+        <div style="font-size:0.82rem; color:#fff; margin-bottom:4px;">🧙 <strong style="color:#ff9500;">${from}</strong> mời bạn vào phòng</div>
+        <div style="font-family:\'Orbitron\',sans-serif; font-size:1.1rem; color:#ff9500; font-weight:bold; letter-spacing:3px; text-align:center; margin:8px 0; background:rgba(255,149,0,0.08); border-radius:6px; padding:5px;">🎮 ${roomCode}</div>
+        <div style="display:flex; gap:8px; margin-top:10px;">
+          <button onclick="window.GameInvite.joinRoomFromInvitePopup(\'${roomCode}\'); document.getElementById(\'game-invite-popup\').remove();" style="flex:1; padding:6px; font-size:0.68rem; font-family:\'Orbitron\',sans-serif; background:rgba(0,255,127,0.12); border:1px solid #00ff7f; border-radius:6px; color:#00ff7f; cursor:pointer;">✔ Đồng ý</button>
+          <button onclick="document.getElementById(\'game-invite-popup\').remove()" style="padding:6px 10px; font-size:0.68rem; font-family:\'Orbitron\',sans-serif; background:rgba(255,0,85,0.08); border:1px solid rgba(255,0,85,0.3); border-radius:6px; color:#ff6688; cursor:pointer;">✕</button>
+        </div>`;
+      document.body.appendChild(popup);
+      setTimeout(() => {
+        const p = document.getElementById('game-invite-popup');
+        if (p) p.remove();
+      }, 20000);
+    }
+
+    setInterval(() => {
+      const lobbyHud = document.getElementById('lobby-hud');
+      if (lobbyHud && lobbyHud.style.display !== 'none') checkGameInvite();
+    }, 20000);
+
+    return { 
+      generateRoomCode, 
+      copyCode, 
+      reloadFriends, 
+      invite, 
+      checkGameInvite, 
+      joinRoomManually, 
+      exitRoom, 
+      updateCloudRoom, 
+      joinRoomFromInvitePopup,
+      cancelInvite,
+      isHost: () => _isHost,
+      getRoomCode: () => _currentRoomCode
+    };
+  })();
+  </script>
+
+  <!-- HỆ THỐNG HÒM THƯ (INBOX) -->
+  <script>
+  window.LobbyInbox = (() => {
+    function getUser() {
+      return window.currentAccount || localStorage.getItem('spellfusion_session') || null;
+    }
+
+    async function open() {
+      const user = getUser();
+      if (!user || user === 'guest') {
+        alert('Bạn cần đăng nhập tài khoản thật để dùng Hòm Thư!');
+        return;
+      }
+      const panel = document.getElementById('inbox-panel');
+      if (panel) { panel.style.display = 'flex'; }
+      await refresh();
+    }
+
+    function close() {
+      const panel = document.getElementById('inbox-panel');
+      if (panel) panel.style.display = 'none';
+    }
+
+    async function refresh() {
+      const user = getUser();
+      if (!user) return;
+
+      // 1. Tải lời mời kết bạn
+      const requests = await window.getFriendRequests(user);
+      const reqList = document.getElementById('inbox-requests-list');
+      if (reqList) {
+        if (requests.length === 0) {
+          reqList.innerHTML = `<div style="color:#8fa0dd; font-size:0.75rem; text-align:center; padding:10px 0;">Không có lời mời kết bạn mới.</div>`;
+        } else {
+          reqList.innerHTML = requests.map(sender => `
+            <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(0,243,255,0.04); border:1px solid rgba(0,243,255,0.12); border-radius:7px; padding:6px 8px; margin-bottom:4px;">
+              <span style="font-size:0.78rem; color:#fff;">⚔️ <strong>${sender}</strong></span>
+              <div style="display:flex; gap:5px;">
+                <button onclick="window.LobbyInbox.acceptFriend('${sender}')" style="padding:3px 8px; font-size:0.68rem; font-family:'Orbitron',sans-serif; background:rgba(0,255,127,0.1); border:1px solid #00ff7f; border-radius:5px; color:#00ff7f; cursor:pointer;">✔ Đồng ý</button>
+                <button onclick="window.LobbyInbox.rejectFriend('${sender}')" style="padding:3px 8px; font-size:0.68rem; font-family:'Orbitron',sans-serif; background:rgba(255,0,85,0.1); border:1px solid #ff0055; border-radius:5px; color:#ff0055; cursor:pointer;">✖</button>
+              </div>
+            </div>`).join('');
+        }
+      }
+
+      // 2. Tải lời mời vào phòng
+      const inviteList = document.getElementById('inbox-invites-list');
+      if (inviteList) {
+        let hasInvite = false;
+        let inviteData = null;
+        try {
+          const raw = await dbGet(`usr_${user}_ginvite`);
+          if (raw) {
+            inviteData = JSON.parse(raw);
+            if (inviteData && Date.now() - inviteData.time <= 120000) { // trong vòng 2 phút
+              hasInvite = true;
+            }
+          }
+        } catch(e) {}
+
+        if (!hasInvite || !inviteData) {
+          inviteList.innerHTML = `<div style="color:#8fa0dd; font-size:0.75rem; text-align:center; padding:10px 0;">Không có lời mời vào phòng mới.</div>`;
+        } else {
+          const fromUser = inviteData.from;
+          const roomCode = inviteData.roomCode;
+          inviteList.innerHTML = `
+            <div style="display:flex; flex-direction:column; gap:6px; background:rgba(255,149,0,0.04); border:1px solid rgba(255,149,0,0.15); border-radius:8px; padding:8px 10px;">
+              <div style="font-size:0.78rem; color:#fff;">🧙 <strong style="color:#ff9500;">${fromUser}</strong> mời chơi phòng: <strong style="font-family:'Orbitron',sans-serif; color:#ff9500; font-size:0.85rem; letter-spacing:1px;">${roomCode}</strong></div>
+              <div style="display:flex; gap:6px; margin-top:4px;">
+                <button onclick="window.LobbyInbox.joinRoom('${roomCode}', this)" style="flex:1; padding:5px; font-size:0.68rem; font-family:'Orbitron',sans-serif; background:rgba(0,255,127,0.12); border:1px solid #00ff7f; border-radius:6px; color:#00ff7f; cursor:pointer;">✔ Chấp nhận & Copy</button>
+                <button onclick="window.LobbyInbox.rejectRoom()" style="padding:5px 10px; font-size:0.68rem; font-family:'Orbitron',sans-serif; background:rgba(255,0,85,0.08); border:1px solid rgba(255,0,85,0.3); border-radius:6px; color:#ff6688; cursor:pointer;">✖ Từ chối</button>
+              </div>
+            </div>`;
+        }
+      }
+
+      // 3. Tải quà tặng nhận được
+      const giftsList = document.getElementById('inbox-gifts-list');
+      if (giftsList) {
+        let gifts = [];
+        try {
+          const raw = await dbGet(`usr_${user}_gifts`);
+          if (raw) {
+            gifts = JSON.parse(raw);
+          }
+        } catch(e) {}
+
+        if (gifts.length === 0) {
+          giftsList.innerHTML = `<div style="color:#8fa0dd; font-size:0.75rem; text-align:center; padding:10px 0;">Không có quà tặng mới.</div>`;
+        } else {
+          giftsList.innerHTML = gifts.map(gift => {
+            let giftDesc = '';
+            if (gift.type === 'gold') {
+              giftDesc = `tặng <strong style="color:var(--neon-yellow);">${gift.amount.toLocaleString('vi-VN')} Vàng</strong>`;
+            } else if (gift.type === 'accessory') {
+              const accList = (typeof ACCESSORIES !== 'undefined' && Array.isArray(ACCESSORIES)) ? ACCESSORIES : [];
+              const acc = accList.find(a => a.id === gift.accessoryId);
+              const name = acc ? acc.name : gift.accessoryId;
+              giftDesc = `tặng trang bị <strong style="color:var(--neon-cyan);">${name}</strong>`;
+            }
+
+            return `
+              <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(255,230,0,0.04); border:1px solid rgba(255,230,0,0.12); border-radius:7px; padding:6px 8px; margin-bottom:4px;">
+                <div style="display:flex; flex-direction:column; gap:2px; max-width:65%;">
+                  <span style="font-size:0.72rem; color:#fff;">🎁 Từ <strong>${gift.from}</strong></span>
+                  <span style="font-size:0.68rem; color:#8fa0dd; line-height:1.2;">Đã ${giftDesc}</span>
+                </div>
+                <button onclick="window.LobbyInbox.claimGift('${gift.id}')" style="padding:4px 10px; font-size:0.68rem; font-family:'Orbitron',sans-serif; background:rgba(0,255,127,0.1); border:1px solid #00ff7f; border-radius:5px; color:#00ff7f; cursor:pointer; white-space:nowrap;">Nhận</button>
+              </div>`;
+          }).join('');
+        }
+      }
+
+      await checkBadge();
+    }
+
+    async function acceptFriend(fromUser) {
+      const user = getUser();
+      await window.acceptFriendRequest(user, fromUser);
+      if (window.LobbyFriends) {
+        await window.LobbyFriends.refresh();
+      }
+      await refresh();
+    }
+
+    async function rejectFriend(fromUser) {
+      const user = getUser();
+      await window.rejectFriendRequest(user, fromUser);
+      if (window.LobbyFriends) {
+        await window.LobbyFriends.refresh();
+      }
+      await refresh();
+    }
+
+    async function joinRoom(roomCode, btn) {
+      btn.textContent = '⏳ Đang vào...';
+      const user = getUser();
+      await dbSet(`usr_${user}_ginvite`, '');
+      
+      // 1. Mở modal cổng chiến đấu
+      const gameSetupModal = document.getElementById('game-setup-modal');
+      if (gameSetupModal) {
+        if (typeof setupMapSelection === 'function' && typeof MAPS !== 'undefined') {
+          setupMapSelection(MAPS);
+        }
+        if (typeof setupDifficultySelection === 'function') {
+          setupDifficultySelection();
+        }
+        if (typeof updateDifficultyUI === 'function') {
+          updateDifficultyUI();
+        }
+        gameSetupModal.classList.add('active');
+        gameCtx.gameState = 'LOBBY_MODAL';
+      }
+      
+      // 2. Điền mã phòng vào ô nhập liệu
+      const input = document.getElementById('join-room-input');
+      if (input) input.value = roomCode;
+
+      // 3. Đóng inbox
+      close();
+      await refresh();
+
+      // 4. Thực hiện vào phòng trực tiếp
+      if (window.GameInvite) {
+        await window.GameInvite.joinRoomManually();
+      }
+    }
+
+    async function rejectRoom() {
+      const user = getUser();
+      await dbSet(`usr_${user}_ginvite`, '');
+      await refresh();
+    }
+
+    async function claimGift(giftId) {
+      const user = getUser();
+      if (!user) return;
+
+      let gifts = [];
+      try {
+        const raw = await dbGet(`usr_${user}_gifts`);
+        if (raw) {
+          gifts = JSON.parse(raw);
+        }
+      } catch(e) {}
+
+      const gift = gifts.find(g => g.id === giftId);
+      if (!gift) return;
+
+      if (gift.type === 'gold') {
+        // Cộng vàng
+        if (window.addGold) {
+          window.addGold(gift.amount);
+        } else if (typeof currentSaveData !== 'undefined' && currentSaveData) {
+          currentSaveData.gold = (currentSaveData.gold || 0) + gift.amount;
+          if (typeof saveAccountSave !== 'undefined') saveAccountSave();
+        }
+        alert(`Nhận thành công ${gift.amount.toLocaleString('vi-VN')} vàng từ ${gift.from}! 🎉`);
+      } else if (gift.type === 'accessory') {
+        // Nhận trang bị
+        if (typeof currentSaveData !== 'undefined' && currentSaveData) {
+          currentSaveData.purchasedAccessories = currentSaveData.purchasedAccessories || [];
+          if (!currentSaveData.purchasedAccessories.includes(gift.accessoryId)) {
+            currentSaveData.purchasedAccessories.push(gift.accessoryId);
+            if (typeof saveAccountSave !== 'undefined') saveAccountSave();
+          }
+        }
+        const accList = (typeof ACCESSORIES !== 'undefined' && Array.isArray(ACCESSORIES)) ? ACCESSORIES : [];
+        const acc = accList.find(a => a.id === gift.accessoryId);
+        const accName = acc ? acc.name : gift.accessoryId;
+        alert(`Nhận thành công trang bị "${accName}" từ ${gift.from}! 🎉`);
+      }
+
+      // Xoá khỏi list gifts trên cloud
+      const updated = gifts.filter(g => g.id !== giftId);
+      await dbSet(`usr_${user}_gifts`, JSON.stringify(updated));
+
+      if (window.updateAccountMenuUI) {
+        window.updateAccountMenuUI();
+      }
+      await refresh();
+    }
+
+    async function checkBadge() {
+      const user = getUser();
+      if (!user || user === 'guest') return;
+      
+      let reqCount = 0;
+      try {
+        const requests = await window.getFriendRequests(user);
+        reqCount = requests.length;
+      } catch(e) {}
+
+      let inviteCount = 0;
+      try {
+        const raw = await dbGet(`usr_${user}_ginvite`);
+        if (raw) {
+          const data = JSON.parse(raw);
+          if (data && Date.now() - data.time <= 120000) {
+            inviteCount = 1;
+          }
+        }
+      } catch(e) {}
+
+      let giftCount = 0;
+      try {
+        const raw = await dbGet(`usr_${user}_gifts`);
+        if (raw) {
+          const list = JSON.parse(raw);
+          giftCount = list.length;
+        }
+      } catch(e) {}
+
+      const total = reqCount + inviteCount + giftCount;
+      const badge = document.getElementById('inbox-badge');
+      if (badge) {
+        if (total > 0) {
+          badge.style.display = 'inline-block';
+          badge.textContent = total;
+        } else {
+          badge.style.display = 'none';
+        }
+      }
+
+      // Sync badge của nút bạn bè cũ
+      const friendBadge = document.getElementById('friend-req-badge');
+      if (friendBadge) {
+        if (reqCount > 0) {
+          friendBadge.style.display = 'inline-block';
+          friendBadge.textContent = reqCount;
+        } else {
+          friendBadge.style.display = 'none';
+        }
+      }
+    }
+
+    // Auto check badge every 20s
+    setInterval(() => {
+      const lobbyHud = document.getElementById('lobby-hud');
+      if (lobbyHud && lobbyHud.style.display !== 'none') {
+        checkBadge();
+        const panel = document.getElementById('inbox-panel');
+        if (panel && panel.style.display !== 'none') {
+          refresh();
+        }
+      }
+    }, 20000);
+
+    return { open, close, refresh, acceptFriend, rejectFriend, joinRoom, rejectRoom, claimGift, checkBadge };
+  })();
+  </script>
+
+  <!-- HỆ THỐNG HƯỚNG DẪN TÂN THỦ (TUTORIAL) -->
+  <script>
+  window.LobbyTutorial = (() => {
+    function open() {
+      const panel = document.getElementById('tutorial-panel');
+      if (panel) {
+        panel.style.display = 'flex';
+        if (typeof gameCtx !== 'undefined') {
+          gameCtx.gameState = 'LOBBY_MODAL';
+        }
+      }
+    }
+
+    function close() {
+      const panel = document.getElementById('tutorial-panel');
+      if (panel) {
+        panel.style.display = 'none';
+        if (typeof gameCtx !== 'undefined' && gameCtx.gameState === 'LOBBY_MODAL') {
+          gameCtx.gameState = 'LOBBY';
+        }
+      }
+    }
+
+    return { open, close };
+  })();
+  </script>
+
+  <!-- HỆ THỐNG TẶNG QUÀ (GIFT AWAY) -->
+  <script>
+  window.LobbyGift = (() => {
+    let _targetUser = null;
+
+    function getUser() {
+      return window.currentAccount || localStorage.getItem('spellfusion_session') || null;
+    }
+
+    function open(friendName) {
+      _targetUser = friendName;
+      const user = getUser();
+      if (!user || user === 'guest') {
+        alert('Bạn cần đăng nhập tài khoản thật để tặng quà!');
+        return;
+      }
+      
+      const panel = document.getElementById('gift-panel');
+      if (panel) panel.style.display = 'flex';
+      
+      const targetUserDisplay = document.getElementById('gift-target-username');
+      if (targetUserDisplay) targetUserDisplay.textContent = friendName;
+      
+      const goldDisplay = document.getElementById('gift-my-gold');
+      if (goldDisplay && typeof currentSaveData !== 'undefined' && currentSaveData && currentSaveData.gold !== undefined) {
+        goldDisplay.textContent = currentSaveData.gold.toLocaleString('vi-VN');
+      }
+
+      const goldInput = document.getElementById('gift-gold-amount');
+      if (goldInput) goldInput.value = '';
+      
+      renderAccessoriesList();
+    }
+
+    function close() {
+      const panel = document.getElementById('gift-panel');
+      if (panel) panel.style.display = 'none';
+      _targetUser = null;
+    }
+
+    // Render danh sách trang bị để mua tặng
+    function renderAccessoriesList() {
+      const list = document.getElementById('gift-accessories-list');
+      if (!list) return;
+
+      const accList = (typeof ACCESSORIES !== 'undefined' && Array.isArray(ACCESSORIES)) ? ACCESSORIES : [];
+      list.innerHTML = accList.map(acc => {
+        let icon = '🔮';
+        if (acc.id === 'crown') icon = '👑';
+        else if (acc.id === 'wings') icon = '🪽';
+        else if (acc.id === 'aura') icon = '🌌';
+        else if (acc.id === 'demon_horns') icon = '😈';
+        else if (acc.id === 'pet_slime') icon = '🫧';
+        else if (acc.id === 'pet_fairy') icon = '🧚';
+        else if (acc.id === 'pet_dragon') icon = '🐉';
+
+        const myGold = (typeof currentSaveData !== 'undefined' && currentSaveData && currentSaveData.gold !== undefined) ? currentSaveData.gold : 0;
+        const canAfford = myGold >= acc.cost;
+
+        return `
+          <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(0,243,255,0.04); border:1px solid rgba(0,243,255,0.12); border-radius:8px; padding:6px 10px; margin-bottom:4px;">
+            <div style="display:flex; flex-direction:column; gap:2px; max-width:65%;">
+              <span style="font-size:0.75rem; color:#fff; font-weight:bold;">${icon} ${acc.name}</span>
+              <span style="font-size:0.62rem; color:#8fa0dd;">Giá: <strong style="color:var(--neon-yellow);">${acc.cost}</strong> vàng</span>
+            </div>
+            <button onclick="window.LobbyGift.sendAccessory('${acc.id}', ${acc.cost})" ${canAfford ? '' : 'disabled'} 
+              style="padding:4px 8px; font-size:0.65rem; font-family:'Orbitron',sans-serif; background:${canAfford ? 'rgba(0,243,255,0.1)' : 'rgba(255,255,255,0.02)'}; border:1px solid ${canAfford ? 'var(--neon-cyan)' : 'rgba(255,255,255,0.1)'}; border-radius:5px; color:${canAfford ? 'var(--neon-cyan)' : 'rgba(255,255,255,0.3)'}; cursor:${canAfford ? 'pointer' : 'not-allowed'};">🎁 Tặng</button>
+          </div>`;
+      }).join('');
+    }
+
+    // Tặng vàng
+    async function sendGold() {
+      const user = getUser();
+      if (!user || !_targetUser) return;
+
+      const input = document.getElementById('gift-gold-amount');
+      if (!input) return;
+      const amount = parseInt(input.value);
+
+      if (isNaN(amount) || amount <= 0) {
+        alert('Vui lòng nhập số vàng hợp lệ!');
+        return;
+      }
+
+      if (typeof currentSaveData === 'undefined' || !currentSaveData || currentSaveData.gold === undefined || currentSaveData.gold < amount) {
+        alert('Bạn không đủ vàng để tặng!');
+        return;
+      }
+
+      // Trừ vàng của mình
+      currentSaveData.gold -= amount;
+      if (typeof saveAccountSave !== 'undefined') {
+        saveAccountSave();
+      }
+      if (window.updateAccountMenuUI) {
+        window.updateAccountMenuUI();
+      }
+
+      // Đưa quà tặng lên cloud
+      const newGift = {
+        id: 'gift_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5),
+        from: user,
+        type: 'gold',
+        amount: amount,
+        time: Date.now()
+      };
+
+      // Đọc gifts hiện tại của target
+      let gifts = [];
+      try {
+        const raw = await dbGet(`usr_${_targetUser}_gifts`);
+        if (raw) {
+          gifts = JSON.parse(raw);
+        }
+      } catch(e) {}
+      
+      gifts.push(newGift);
+      await dbSet(`usr_${_targetUser}_gifts`, JSON.stringify(gifts));
+
+      alert(`Đã gửi tặng thành công ${amount.toLocaleString('vi-VN')} vàng cho ${_targetUser}! 🎁`);
+      close();
+    }
+
+    // Tặng trang bị
+    async function sendAccessory(accessoryId, cost) {
+      const user = getUser();
+      if (!user || !_targetUser) return;
+
+      if (typeof currentSaveData === 'undefined' || !currentSaveData || currentSaveData.gold === undefined || currentSaveData.gold < cost) {
+        alert('Bạn không đủ vàng để mua tặng vật phẩm này!');
+        return;
+      }
+
+      const accList = (typeof ACCESSORIES !== 'undefined' && Array.isArray(ACCESSORIES)) ? ACCESSORIES : [];
+      const acc = accList.find(a => a.id === accessoryId);
+      if (!acc) return;
+
+      // Trừ vàng
+      currentSaveData.gold -= cost;
+      if (typeof saveAccountSave !== 'undefined') {
+        saveAccountSave();
+      }
+      if (window.updateAccountMenuUI) {
+        window.updateAccountMenuUI();
+      }
+
+      // Đưa lên cloud
+      const newGift = {
+        id: 'gift_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5),
+        from: user,
+        type: 'accessory',
+        accessoryId: accessoryId,
+        time: Date.now()
+      };
+
+      let gifts = [];
+      try {
+        const raw = await dbGet(`usr_${_targetUser}_gifts`);
+        if (raw) {
+          gifts = JSON.parse(raw);
+        }
+      } catch(e) {}
+
+      gifts.push(newGift);
+      await dbSet(`usr_${_targetUser}_gifts`, JSON.stringify(gifts));
+
+      alert(`Đã mua tặng thành công vật phẩm "${acc.name}" cho ${_targetUser}! 🎁`);
+      close();
+    }
+
+    return { open, close, sendGold, sendAccessory };
+  })();
+  </script>
+</body>
+</html>
+</body>
+</html>
 </body>
 </html>

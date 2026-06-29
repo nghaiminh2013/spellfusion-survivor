@@ -128,6 +128,8 @@ const ACCESSORIES = [
   }
 ];
 
+window.ACCESSORIES = ACCESSORIES;
+
 const crosshairSettings = {
   type: 'cross',
   color: '#00f3ff',
@@ -271,6 +273,9 @@ function setupDifficultySelection() {
       if (btn.classList.contains('locked') || btn.disabled) return;
       gameCtx.currentDifficulty = btn.getAttribute('data-diff');
       updateDifficultyUI();
+      if (window.GameInvite && window.GameInvite.isHost()) {
+        window.GameInvite.updateCloudRoom();
+      }
     });
   });
 }
@@ -287,6 +292,10 @@ function updateAccountMenuUI() {
   const lobbyUser = document.getElementById('lobby-username-display');
   const lobbyLv   = document.getElementById('lobby-menu-level');
   const lobbyGold = document.getElementById('lobby-menu-gold');
+  const lobbyMaxWave = document.getElementById('lobby-menu-maxwave');
+  const lobbyCharIcon = document.getElementById('lobby-menu-char-icon');
+  const lobbyCharName = document.getElementById('lobby-menu-char-name');
+  const lobbyAdminBtn = document.getElementById('lobby-admin-btn');
   const sessionUser = safeStorage.getItem('spellfusion_session') || 'guest';
 
   if (usernameDisplay) usernameDisplay.textContent = sessionUser;
@@ -295,6 +304,18 @@ function updateAccountMenuUI() {
   if (lobbyUser) lobbyUser.textContent = sessionUser;
   if (lobbyLv)   lobbyLv.textContent   = currentSaveData.accountLevel;
   if (lobbyGold) lobbyGold.textContent = currentSaveData.gold;
+  if (lobbyMaxWave) {
+    lobbyMaxWave.textContent = Math.max(currentSaveData.maxWaveNormal || 1, currentSaveData.maxWaveHard || 1);
+  }
+  
+  // Show / Hide Admin Panel based on account type
+  if (lobbyAdminBtn) {
+    if (sessionUser === 'admin' || sessionUser === 'spelladmin' || sessionUser === 'spelladminn') {
+      lobbyAdminBtn.style.display = 'flex';
+    } else {
+      lobbyAdminBtn.style.display = 'none';
+    }
+  }
 
   const xpNeeded = currentSaveData.accountLevel * 100;
   const xpPct = Math.min(100, (currentSaveData.accountXp / xpNeeded) * 100);
@@ -309,6 +330,9 @@ function updateAccountMenuUI() {
   const activeCharCardName = document.getElementById('active-char-card-name');
   const activeCharCardTitle = document.getElementById('active-char-card-title');
   const activeCharCard = document.getElementById('active-character-card');
+  
+  if (lobbyCharIcon) lobbyCharIcon.textContent = char.icon;
+  if (lobbyCharName) lobbyCharName.textContent = char.name;
   
   if (activeCharCardIcon) activeCharCardIcon.textContent = char.icon;
   if (activeCharCardName) {
@@ -329,6 +353,126 @@ function updateAccountMenuUI() {
   }
   if (activeCharCardTitle) activeCharCardTitle.textContent = char.title;
   updateDifficultyUI();
+}
+
+function renderSavedAccounts() {
+  const container = document.getElementById('saved-accounts-container');
+  const list = document.getElementById('saved-accounts-list');
+  if (!container || !list) return;
+  
+  const accounts = getAccounts();
+  const usernames = Object.keys(accounts).filter(u => u !== 'guest');
+  
+  if (usernames.length === 0) {
+    container.style.display = 'none';
+    return;
+  }
+  
+  container.style.display = 'block';
+  list.innerHTML = '';
+  
+  usernames.forEach(username => {
+    const item = document.createElement('div');
+    item.style.display = 'flex';
+    item.style.alignItems = 'center';
+    item.style.justifyContent = 'space-between';
+    item.style.background = 'rgba(255, 255, 255, 0.03)';
+    item.style.border = '1px solid rgba(255, 255, 255, 0.08)';
+    item.style.borderRadius = '6px';
+    item.style.padding = '0.5rem 0.7rem';
+    item.style.cursor = 'pointer';
+    item.style.transition = 'all 0.2s';
+    item.style.marginBottom = '0.4rem';
+    
+    item.onmouseenter = () => {
+      item.style.background = 'rgba(0, 243, 255, 0.06)';
+      item.style.borderColor = 'rgba(0, 243, 255, 0.25)';
+    };
+    item.onmouseleave = () => {
+      item.style.background = 'rgba(255, 255, 255, 0.03)';
+      item.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+    };
+    
+    const nameSpan = document.createElement('span');
+    nameSpan.style.color = '#fff';
+    nameSpan.style.fontSize = '0.85rem';
+    nameSpan.style.fontWeight = '500';
+    nameSpan.style.textShadow = '0 0 4px rgba(255,255,255,0.2)';
+    nameSpan.style.flexGrow = '1';
+    nameSpan.textContent = username;
+    
+    nameSpan.onclick = () => {
+      const uInput = document.getElementById('login-username');
+      const pInput = document.getElementById('login-password');
+      if (uInput) uInput.value = username;
+      if (pInput) pInput.value = accounts[username];
+      
+      const loginBtn = document.getElementById('login-btn');
+      if (loginBtn) loginBtn.click();
+    };
+    
+    const deleteBtn = document.createElement('span');
+    deleteBtn.style.color = 'var(--neon-magenta)';
+    deleteBtn.style.cursor = 'pointer';
+    deleteBtn.style.fontSize = '0.7rem';
+    deleteBtn.style.padding = '2px 6px';
+    deleteBtn.style.borderRadius = '4px';
+    deleteBtn.style.background = 'rgba(255, 0, 85, 0.08)';
+    deleteBtn.style.border = '1px solid rgba(255, 0, 85, 0.15)';
+    deleteBtn.style.transition = 'all 0.15s';
+    deleteBtn.textContent = 'XÓA BỘ NHỚ';
+    
+    deleteBtn.onmouseenter = () => {
+      deleteBtn.style.background = 'rgba(255, 0, 85, 0.2)';
+    };
+    deleteBtn.onmouseleave = () => {
+      deleteBtn.style.background = 'rgba(255, 0, 85, 0.08)';
+    };
+    
+    deleteBtn.onclick = (e) => {
+      e.stopPropagation();
+      if (confirm(`Bạn có chắc chắn muốn xóa tài khoản '${username}' khỏi bộ nhớ thiết bị này?`)) {
+        const localAccounts = getAccounts();
+        delete localAccounts[username];
+        saveAccounts(localAccounts);
+        localStorage.removeItem(`spellfusion_save_${username}`);
+        
+        const sessionUser = localStorage.getItem('spellfusion_session');
+        if (sessionUser === username) {
+          localStorage.removeItem('spellfusion_session');
+        }
+        renderSavedAccounts();
+      }
+    };
+    
+    item.appendChild(nameSpan);
+    item.appendChild(deleteBtn);
+    list.appendChild(item);
+  });
+
+  // Update Sync Code display
+  const displayEl = document.getElementById('display-sync-code');
+  if (displayEl && window.getDeviceId) {
+    const currentId = window.getDeviceId();
+    displayEl.textContent = currentId;
+    
+    // Unbind previous onclick to prevent multiple listeners
+    displayEl.onclick = null;
+    displayEl.onclick = (e) => {
+      e.stopPropagation();
+      navigator.clipboard.writeText(currentId).then(() => {
+        const oldText = displayEl.textContent;
+        displayEl.textContent = "ĐÃ SAO CHÉP! ✓";
+        displayEl.style.color = "#00ff7f";
+        setTimeout(() => {
+          displayEl.textContent = oldText;
+          displayEl.style.color = "var(--neon-cyan)";
+        }, 1500);
+      }).catch(err => {
+        console.error("Failed to copy Device ID:", err);
+      });
+    };
+  }
 }
 
 function setupAuth() {
@@ -418,6 +562,7 @@ function setupAuth() {
         loginMessage.style.color = '#00ff7f';
         loginMessage.textContent = res.message || 'Đăng nhập thành công! 🎉';
       }
+      renderSavedAccounts();
       
       setTimeout(() => {
         if (loginScreen) loginScreen.classList.remove('active');
@@ -511,19 +656,55 @@ function setupAuth() {
       if (loginUsernameInput) loginUsernameInput.value = '';
       if (loginPasswordInput) loginPasswordInput.value = '';
       if (loginMessage) loginMessage.textContent = '';
+      renderSavedAccounts();
     });
   }
-  setupBackupRestore();
+  renderSavedAccounts();
+  if (window.syncAccountsWithCloud) {
+    window.syncAccountsWithCloud().then(() => renderSavedAccounts());
+  }
 }
 
-function checkSession() {
+async function checkSession() {
   const sessionUser = safeStorage.getItem('spellfusion_session');
   const loginScreen = document.getElementById('login-screen');
   const startScreen = document.getElementById('start-screen');
   
   if (sessionUser) {
+    // Check if banned
+    if (sessionUser !== 'guest' && window.dbGet) {
+      try {
+        const isBanned = await window.dbGet(`usr_${sessionUser}_banned`);
+        if (isBanned === 'true' || isBanned === true) {
+          alert('Tài khoản của bạn đã bị khóa bởi Ban Quản Trị! 🚫');
+          logout();
+          if (loginScreen) {
+            loginScreen.classList.add('active');
+            renderSavedAccounts();
+          }
+          if (startScreen) startScreen.classList.remove('active');
+          return;
+        }
+      } catch (e) {
+        console.error("Lỗi kiểm tra trạng thái ban:", e);
+      }
+    }
+
     const accounts = getAccounts();
     if (accounts[sessionUser]) {
+      // Sync cloud save to local first to ensure device progress consistency
+      if (sessionUser !== 'guest' && window.loadCloudSave) {
+        try {
+          const parsedSave = await window.loadCloudSave(sessionUser);
+          if (parsedSave) {
+            currentSaveData = parsedSave;
+            safeStorage.setItem(`spellfusion_save_${sessionUser}`, JSON.stringify(currentSaveData));
+          }
+        } catch (e) {
+          console.error("Lỗi đồng bộ tự động khi kiểm tra session:", e);
+        }
+      }
+      
       loadAccountSave(sessionUser);
       if (loginScreen) loginScreen.classList.remove('active');
       updateAccountMenuUI();
@@ -535,7 +716,13 @@ function checkSession() {
     }
   }
   
-  if (loginScreen) loginScreen.classList.add('active');
+  if (loginScreen) {
+    loginScreen.classList.add('active');
+    renderSavedAccounts();
+    if (window.syncAccountsWithCloud) {
+      window.syncAccountsWithCloud().then(() => renderSavedAccounts());
+    }
+  }
   if (startScreen) startScreen.classList.remove('active');
 }
 
@@ -1220,6 +1407,9 @@ function setupMapSelection(MAPS) {
       document.querySelectorAll('.map-card').forEach(c => c.classList.remove('selected'));
       card.classList.add('selected');
       gameCtx.currentMap = key;
+      if (window.GameInvite && window.GameInvite.isHost()) {
+        window.GameInvite.updateCloudRoom();
+      }
     });
     
     container.appendChild(card);
@@ -1555,11 +1745,32 @@ function setupCharacterSelection() {
         card.classList.add('selected');
         gameCtx.currentCharacter = key;
         
+        // Save selected character state
+        if (typeof currentSaveData !== 'undefined' && currentSaveData) {
+          currentSaveData.currentCharacter = key;
+          if (typeof saveAccountSave === 'function') {
+            saveAccountSave();
+          }
+        }
+        
         // Re-create the player so stats and spells update in lobby
         gameCtx.player = new Player(ARENA_WIDTH / 2, ARENA_HEIGHT / 2);
         
         // Update lobby avatar color
-        const charColors = { ignis:'#ff4500', marina:'#00aaff', zephyr:'#00ff88', tesla:'#ffe600' };
+        const charColors = { 
+          ignis: '#ff4500', 
+          marina: '#00aaff', 
+          zephyr: '#00ff88', 
+          tesla: '#ffe600',
+          gaia: '#4caf50',
+          wolf: '#ff003c',
+          cobra: '#a020f0',
+          monk: '#ff9f43',
+          artemis: '#00dbff',
+          bloodmage: '#ff003c',
+          shadow: '#34495e',
+          paladin: '#ffd700'
+        };
         if (window.LOBBY && LOBBY.player) {
           LOBBY.player.color = charColors[key] || '#00f3ff';
         }
@@ -1678,8 +1889,40 @@ function setupGiftcode() {
     'PROPLAYER': { gold: 5000, desc: 'Mã cho cao thủ sinh tồn! ⚡' },
     'CRAFTMASTER': { gold: 3000, desc: 'Bậc thầy chế tạo đã xuất hiện! 🛠️' },
     'DIAMONDGIFT': { gold: 10000, desc: 'Kim cương và vàng đầy túi! 💎' },
-    'WALKTHROUGH': { gold: 2500, desc: 'Mã đi xuyên mọi công trình! 🚶' }
+    'WALKTHROUGH': { gold: 2500, desc: 'Mã đi xuyên mọi công trình! 🚶' },
+    'GOLD50K': { gold: 50000, desc: 'Quà tặng 50k Vàng từ Admin! 🪙' },
+    'SPELL50K': { gold: 50000, desc: 'Món quà may mắn 50k Vàng! 🪙' }
   };
+
+  // Tải Gift Code tùy biến từ Cloud Key toàn cục
+  async function loadCloudGiftcodes() {
+    try {
+      const raw = await window.dbGet('spellfusion_global_giftcodes');
+      if (raw) {
+        let cloudCodes = [];
+        try {
+          const decoded = window.safeAtob ? window.safeAtob(raw) : '';
+          cloudCodes = JSON.parse(decoded || raw);
+        } catch (e) {
+          try {
+            cloudCodes = JSON.parse(raw);
+          } catch(err) {
+            cloudCodes = raw;
+          }
+        }
+        if (Array.isArray(cloudCodes)) {
+          cloudCodes.forEach(item => {
+            if (item && item.code) {
+              CODES[item.code] = { gold: Number(item.gold) || 0, desc: item.desc || 'Quà tặng từ Admin!' };
+            }
+          });
+        }
+      }
+    } catch(e) {
+      console.error("Lỗi tải giftcode từ Cloud:", e);
+    }
+  }
+  loadCloudGiftcodes();
 
   const handleClaim = (inputEl, messageEl) => {
     if (!inputEl || !messageEl) return;
@@ -1693,6 +1936,24 @@ function setupGiftcode() {
     if (!currentSaveData) {
       messageEl.style.color = 'var(--neon-magenta)';
       messageEl.textContent = 'Hãy đăng nhập trước khi nhận code!';
+      return;
+    }
+
+    if (code === 'SPELLADMINN') {
+      const amountStr = prompt("Nhập số vàng bạn muốn nhận (Admin Code):", "50000");
+      if (amountStr === null) return; // Hủy bỏ
+      const amount = parseInt(amountStr);
+      if (isNaN(amount) || amount <= 0) {
+        messageEl.style.color = 'var(--neon-magenta)';
+        messageEl.textContent = 'Số vàng nhập vào không hợp lệ!';
+        return;
+      }
+      currentSaveData.gold += amount;
+      saveAccountSave();
+      messageEl.style.color = '#00ff7f';
+      messageEl.textContent = `+${amount.toLocaleString()} 🪙 (Quyền Admin!)`;
+      inputEl.value = '';
+      updateAccountMenuUI();
       return;
     }
 
@@ -2186,104 +2447,57 @@ function setupCrafting() {
 }
 window.setupCrafting = setupCrafting;
 
-function setupBackupRestore() {
-  const exportBtn = document.getElementById('btn-export-data');
-  const importBtn = document.getElementById('btn-import-data');
-  const lobbyBackupBtn = document.getElementById('lobby-backup-btn');
-  const backupModal = document.getElementById('backup-modal');
-  const closeBackupBtn = document.getElementById('btn-close-backup-modal');
+// setupBackupRestore removed as accounts are now fully synced via Cloud Device ID
+
+window.manualCloudSync = async () => {
+  const user = window.currentAccount || localStorage.getItem('spellfusion_session');
+  if (!user || user === 'guest') {
+    alert("Bạn cần đăng nhập tài khoản Cloud để đồng bộ!");
+    return;
+  }
   
-  const exportSection = document.getElementById('backup-export-section');
-  const importSection = document.getElementById('backup-import-section');
+  const btn = document.getElementById('lobby-cloud-sync-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "ĐANG ĐỒNG BỘ... ⌛";
+  }
   
-  const backupCodeTextarea = document.getElementById('backup-code-textarea');
-  const importCodeTextarea = document.getElementById('import-code-textarea');
-  
-  const copyBtn = document.getElementById('btn-copy-backup-code');
-  const confirmImportBtn = document.getElementById('btn-confirm-import');
-
-  const openBackup = () => {
-    if (!backupModal || !exportSection || !importSection || !backupCodeTextarea) return;
-    
-    // Generate backup code
-    const code = exportAllAccountsData();
-    backupCodeTextarea.value = code;
-    
-    exportSection.style.display = 'block';
-    importSection.style.display = 'none';
-    backupModal.style.display = 'flex';
-  };
-
-  const openImport = () => {
-    if (!backupModal || !exportSection || !importSection || !importCodeTextarea) return;
-    
-    importCodeTextarea.value = '';
-    
-    exportSection.style.display = 'none';
-    importSection.style.display = 'block';
-    backupModal.style.display = 'flex';
-  };
-
-  if (exportBtn) {
-    exportBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      openBackup();
-    });
-  }
-
-  if (lobbyBackupBtn) {
-    lobbyBackupBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      openBackup();
-    });
-  }
-
-  if (importBtn) {
-    importBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      openImport();
-    });
-  }
-
-  if (closeBackupBtn) {
-    closeBackupBtn.addEventListener('click', () => {
-      if (backupModal) backupModal.style.display = 'none';
-    });
-  }
-
-  if (copyBtn) {
-    copyBtn.addEventListener('click', () => {
-      if (!backupCodeTextarea) return;
-      backupCodeTextarea.select();
-      backupCodeTextarea.setSelectionRange(0, 99999); // For mobile devices
-      
-      try {
-        navigator.clipboard.writeText(backupCodeTextarea.value);
-        copyBtn.textContent = 'ĐÃ SAO CHÉP! ✓';
-        setTimeout(() => { copyBtn.textContent = 'SAO CHÉP MÃ 📋'; }, 2000);
-      } catch (err) {
-        alert('Không thể tự sao chép, hãy bôi đen toàn bộ và copy thủ công.');
-      }
-    });
-  }
-
-  if (confirmImportBtn) {
-    confirmImportBtn.addEventListener('click', () => {
-      if (!importCodeTextarea) return;
-      const code = importCodeTextarea.value.trim();
-      if (!code) {
-        alert('Vui lòng nhập mã sao lưu!');
-        return;
-      }
-      
-      const success = importAllAccountsData(code);
+  try {
+    if (typeof compressSaveData === 'function' && typeof dbSet === 'function') {
+      const success = await dbSet(`usr_${user}_sv`, compressSaveData(currentSaveData));
       if (success) {
-        alert('Nhập dữ liệu thành công! Ứng dụng sẽ tự động tải lại để đồng bộ hóa.');
-        location.reload();
+        alert("Đồng bộ dữ liệu lên Cloud thành công! 🎉 Giờ bạn có thể đăng nhập trên máy khác để tiếp tục chơi.");
       } else {
-        alert('Mã sao lưu không hợp lệ! Vui lòng kiểm tra lại.');
+        alert("Lỗi đồng bộ dữ liệu lên Cloud. Vui lòng kiểm tra lại kết nối mạng!");
       }
-    });
+    }
+  } catch (e) {
+    console.error(e);
+    alert("Có lỗi xảy ra khi đồng bộ: " + e.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "ĐỒNG BỘ CLOUD ☁️";
+    }
   }
-}
-window.setupBackupRestore = setupBackupRestore;
+};
+
+window.promptSyncCode = async () => {
+  const code = prompt("Nhập mã đồng bộ (Sync Code) của máy khác để tải danh sách tài khoản:");
+  if (!code) return;
+  
+  if (code.trim().startsWith('dev_')) {
+    if (window.setDeviceId) {
+      window.setDeviceId(code.trim());
+      alert("Đã kết nối thiết bị! Đang đồng bộ tài khoản từ Cloud... ⌛");
+      if (window.syncAccountsWithCloud) {
+        await window.syncAccountsWithCloud();
+      }
+      if (typeof renderSavedAccounts === 'function') {
+        renderSavedAccounts();
+      }
+    }
+  } else {
+    alert("Mã đồng bộ không hợp lệ! Mã phải có dạng 'dev_xxxx'.");
+  }
+};
