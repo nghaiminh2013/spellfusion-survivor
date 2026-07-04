@@ -778,6 +778,167 @@ Object.defineProperty(window, 'currentSaveData', {
   configurable: true
 });
 
+window.loadCloudSave = loadCloudSave;
+window.saveCloudSave = saveCloudSave;
+
+function serializeGameRun() {
+  if (!gameCtx.player) return null;
+
+  const p = gameCtx.player;
+  const obstaclesData = [];
+  if (gameCtx.obstacles) {
+    for (const obs of gameCtx.obstacles) {
+      if (obs.active) {
+        obstaclesData.push({
+          type: obs.type,
+          x: obs.x,
+          y: obs.y,
+          hp: obs.hp,
+          maxHp: obs.maxHp,
+          rich: obs.rich || false
+        });
+      }
+    }
+  }
+
+  const playerData = {
+    characterKey: p.characterKey,
+    level: p.level,
+    xp: p.xp,
+    xpNeeded: p.xpNeeded,
+    hp: p.hp,
+    maxHp: p.maxHp,
+    energy: p.energy,
+    maxEnergy: p.maxEnergy,
+    wood: p.wood,
+    stone: p.stone,
+    iron: p.iron,
+    gold_ore: p.gold_ore,
+    diamond_ore: p.diamond_ore,
+    herb_red: p.herb_red,
+    herb_blue: p.herb_blue,
+    herb_yellow: p.herb_yellow,
+    potion_health: p.potion_health,
+    potion_energy: p.potion_energy,
+    potion_speed: p.potion_speed,
+    spellLevels: [...p.spellLevels],
+    spells: [...p.spells],
+    structureInventory: { ...p.structureInventory },
+    x: p.x,
+    y: p.y
+  };
+
+  const saveData = {
+    version: 1.0,
+    timestamp: Date.now(),
+    currentWave: gameCtx.currentWave,
+    waveState: gameCtx.waveState,
+    waveTimer: gameCtx.waveTimer,
+    currentMap: gameCtx.currentMap,
+    currentDifficulty: gameCtx.currentDifficulty,
+    player: playerData,
+    obstacles: obstaclesData,
+    score: gameCtx.score || 0,
+    kills: gameCtx.kills || 0
+  };
+
+  return saveData;
+}
+window.serializeGameRun = serializeGameRun;
+
+function deserializeGameRun(saveData) {
+  if (!saveData || !saveData.player) return false;
+
+  gameCtx.currentWave = saveData.currentWave || 1;
+  gameCtx.waveState = saveData.waveState || 'BREAK';
+  gameCtx.waveTimer = saveData.waveTimer || 1800;
+  gameCtx.currentMap = saveData.currentMap || 'forest';
+  gameCtx.currentDifficulty = saveData.currentDifficulty || 'normal';
+  gameCtx.score = saveData.score || 0;
+  gameCtx.kills = saveData.kills || 0;
+  gameCtx.gameState = 'PLAYING';
+  gameCtx.inCave = false;
+
+  const pData = saveData.player;
+  const PlayerClass = window.Player;
+  if (!PlayerClass) return false;
+
+  gameCtx.player = new PlayerClass(pData.x || 1250, pData.y || 1250, pData.characterKey);
+  const p = gameCtx.player;
+
+  p.level = pData.level || 1;
+  p.xp = pData.xp || 0;
+  p.xpNeeded = pData.xpNeeded || 100;
+  p.maxHp = pData.maxHp || 100;
+  p.hp = pData.hp !== undefined ? pData.hp : p.maxHp;
+  p.maxEnergy = pData.maxEnergy || 100;
+  p.energy = pData.energy !== undefined ? pData.energy : p.maxEnergy;
+  p.wood = pData.wood || 0;
+  p.stone = pData.stone || 0;
+  p.iron = pData.iron || 0;
+  p.gold_ore = pData.gold_ore || 0;
+  p.diamond_ore = pData.diamond_ore || 0;
+  p.herb_red = pData.herb_red || 0;
+  p.herb_blue = pData.herb_blue || 0;
+  p.herb_yellow = pData.herb_yellow || 0;
+  p.potion_health = pData.potion_health || 0;
+  p.potion_energy = pData.potion_energy || 0;
+  p.potion_speed = pData.potion_speed || 0;
+  if (pData.spellLevels) p.spellLevels = [...pData.spellLevels];
+  if (pData.spells) p.spells = [...pData.spells];
+  if (pData.structureInventory) p.structureInventory = { ...pData.structureInventory };
+  
+  const char = CHARACTERS[p.characterKey] || CHARACTERS['ignis'];
+  if (char.startElement === 'fire') p.basicAttackType = 'basic_fire';
+  else if (char.startElement === 'water') p.basicAttackType = 'basic_water';
+  else if (char.startElement === 'wind') p.basicAttackType = 'basic_wind';
+  else if (char.startElement === 'lightning') p.basicAttackType = 'basic_lightning';
+  else if (char.startElement === 'frost') p.basicAttackType = 'basic_frost';
+  else if (char.startElement === 'magma') p.basicAttackType = 'basic_magma';
+  else if (char.startElement === 'creation') p.basicAttackType = 'basic_creation';
+  else if (char.startElement === 'wolf') p.basicAttackType = 'basic_wolf';
+  else if (char.startElement === 'gaia') p.basicAttackType = 'basic_gaia';
+  else if (char.startElement === 'umbra') p.basicAttackType = 'basic_umbra';
+
+  if (gameCtx.obstacles) {
+    for (const obs of gameCtx.obstacles) {
+      if (typeof obs.destroy3D === 'function') obs.destroy3D();
+    }
+  }
+  gameCtx.obstacles = [];
+
+  const ObstacleClass = window.Obstacle;
+  if (ObstacleClass && saveData.obstacles) {
+    for (const oData of saveData.obstacles) {
+      const obs = new ObstacleClass(oData.x, oData.y, oData.type);
+      obs.hp = oData.hp;
+      obs.maxHp = oData.maxHp;
+      obs.rich = oData.rich || false;
+      gameCtx.obstacles.push(obs);
+    }
+  }
+
+  const selectModal = document.getElementById('character-selection-modal');
+  if (selectModal) selectModal.style.display = 'none';
+  const setupModal = document.getElementById('game-setup-modal');
+  if (setupModal) setupModal.style.display = 'none';
+  const lobbyMenu = document.getElementById('lobby-menu');
+  if (lobbyMenu) lobbyMenu.style.display = 'none';
+  const pauseScreen = document.getElementById('pause-screen');
+  if (pauseScreen) pauseScreen.style.display = 'none';
+
+  gameCtx.enemies = [];
+  gameCtx.enemyBullets = [];
+  gameCtx.playerSpells = [];
+  gameCtx.xpGems = [];
+  gameCtx.resourcePickups = [];
+
+  p.updateHUD();
+
+  return true;
+}
+window.deserializeGameRun = deserializeGameRun;
+
 window.sendFriendRequest = sendFriendRequest;
 window.acceptFriendRequest = acceptFriendRequest;
 window.rejectFriendRequest = rejectFriendRequest;

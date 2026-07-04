@@ -125,6 +125,22 @@ const ACCESSORIES = [
     desc: 'Tăng vĩnh viễn +8% tỷ lệ chí mạng ma pháp.',
     rarity: 'rare',
     cost: 1500
+  },
+  {
+    id: 'glove_mining',
+    category: 'stat',
+    name: 'Găng Tay Khai Thác 🥊',
+    desc: 'Tăng +35% tốc độ khai thác gỗ/đá/quặng bằng tay.',
+    rarity: 'rare',
+    cost: 1800
+  },
+  {
+    id: 'thorn_armor',
+    category: 'stat',
+    name: 'Giáp Gai Thép 🦔',
+    desc: 'Phản lại 20% sát thương cận chiến mà quái vật gây ra.',
+    rarity: 'epic',
+    cost: 2500
   }
 ];
 
@@ -852,6 +868,8 @@ function renderShopGrid() {
     else if (acc.id === 'amulet_phoenix') icon = '🐦';
     else if (acc.id === 'hourglass_time') icon = '⏳';
     else if (acc.id === 'clover_luck') icon = '🍀';
+    else if (acc.id === 'glove_mining') icon = '🥊';
+    else if (acc.id === 'thorn_armor') icon = '🦔';
 
     let actionBtnHtml = '';
     if (isPurchased) {
@@ -1055,10 +1073,27 @@ function setupInputs() {
     });
   }
 
-  const exitBtn = document.getElementById('exit-btn');
-  if (exitBtn) {
-    exitBtn.addEventListener('click', () => {
-      exitToMenu();
+  const saveExitBtn = document.getElementById('save-exit-btn');
+  if (saveExitBtn) {
+    saveExitBtn.addEventListener('click', () => {
+      if (typeof serializeGameRun === 'function') {
+        const runData = serializeGameRun();
+        if (runData) {
+          const username = currentAccount || 'guest';
+          const slotId = window.activeSaveSlot || 1;
+          localStorage.setItem(`spellfusion_run_save_${username}_slot_${slotId}`, JSON.stringify(runData));
+        }
+      }
+      if (typeof togglePause === 'function') togglePause();
+      if (typeof exitToMenu === 'function') exitToMenu();
+    });
+  }
+
+  const exitNoSaveBtn = document.getElementById('exit-no-save-btn');
+  if (exitNoSaveBtn) {
+    exitNoSaveBtn.addEventListener('click', () => {
+      if (typeof togglePause === 'function') togglePause();
+      if (typeof exitToMenu === 'function') exitToMenu();
     });
   }
 
@@ -2863,3 +2898,122 @@ function setupAlchemyEventListeners() {
 }
 
 setTimeout(setupAlchemyEventListeners, 150);
+
+let selectedSaveSlot = 1;
+window.selectedSaveSlot = selectedSaveSlot;
+
+function setupSaveSlotsUI() {
+  const container = document.getElementById('save-slots-container');
+  if (!container) return;
+
+  const username = currentAccount || 'guest';
+  const slots = [1, 2, 3];
+
+  slots.forEach(slotId => {
+    const slotCard = container.querySelector(`.save-slot-card[data-slot="${slotId}"]`);
+    if (!slotCard) return;
+
+    const saveDataStr = localStorage.getItem(`spellfusion_run_save_${username}_slot_${slotId}`);
+    const infoEl = slotCard.querySelector('.slot-info');
+    const detailsEl = slotCard.querySelector('.slot-details');
+
+    if (saveDataStr) {
+      try {
+        const saveData = JSON.parse(saveDataStr);
+        const charName = CHARACTERS[saveData.player.characterKey]?.name || saveData.player.characterKey;
+        const wave = saveData.currentWave || 1;
+        const mapName = MAPS[saveData.currentMap]?.name || saveData.currentMap;
+        const date = new Date(saveData.timestamp).toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
+        infoEl.innerHTML = `<span style="color:#00ff7f;">Wave ${wave}</span> (${mapName})`;
+        detailsEl.innerHTML = `<span style="color:#ffd700;">${charName}</span> - Lv.${saveData.player.level}<br>${date}`;
+        detailsEl.style.display = 'block';
+        slotCard.style.borderColor = 'rgba(0, 255, 127, 0.4)';
+        slotCard.setAttribute('data-has-save', 'true');
+      } catch (e) {
+        console.error("Error parsing save slot:", e);
+        infoEl.textContent = "PHÒNG TRỐNG";
+        detailsEl.style.display = 'none';
+        slotCard.style.borderColor = 'rgba(255,255,255,0.1)';
+        slotCard.removeAttribute('data-has-save');
+      }
+    } else {
+      infoEl.textContent = "PHÒNG TRỐNG";
+      detailsEl.style.display = 'none';
+      slotCard.style.borderColor = 'rgba(255,255,255,0.1)';
+      slotCard.removeAttribute('data-has-save');
+    }
+
+    if (!slotCard.dataset.listenerBound) {
+      slotCard.dataset.listenerBound = 'true';
+      slotCard.addEventListener('click', () => {
+        container.querySelectorAll('.save-slot-card').forEach(c => {
+          c.classList.remove('selected');
+          c.style.background = 'rgba(255, 255, 255, 0.01)';
+          const hasSave = c.getAttribute('data-has-save') === 'true';
+          c.style.borderColor = hasSave ? 'rgba(0, 255, 127, 0.4)' : 'rgba(255,255,255,0.1)';
+        });
+
+        slotCard.classList.add('selected');
+        selectedSaveSlot = slotId;
+        window.selectedSaveSlot = selectedSaveSlot;
+        slotCard.style.background = 'rgba(204, 51, 255, 0.06)';
+        slotCard.style.borderColor = 'rgba(204, 51, 255, 0.6)';
+
+        updateResumeButtonUI(slotCard);
+      });
+    }
+  });
+
+  const currentSelectedCard = container.querySelector(`.save-slot-card[data-slot="${selectedSaveSlot}"]`);
+  if (currentSelectedCard) {
+    currentSelectedCard.click();
+  }
+}
+window.setupSaveSlotsUI = setupSaveSlotsUI;
+
+function updateResumeButtonUI(selectedCard) {
+  const resumeBtn = document.getElementById('resume-save-btn');
+  if (!resumeBtn) return;
+
+  const hasSave = selectedCard.getAttribute('data-has-save') === 'true';
+  if (hasSave) {
+    resumeBtn.style.display = 'block';
+  } else {
+    resumeBtn.style.display = 'none';
+  }
+}
+
+function setupResumeButtonListener() {
+  const resumeBtn = document.getElementById('resume-save-btn');
+  if (resumeBtn && !resumeBtn.dataset.listenerBound) {
+    resumeBtn.dataset.listenerBound = 'true';
+    resumeBtn.addEventListener('click', () => {
+      const username = currentAccount || 'guest';
+      const slotId = window.selectedSaveSlot || 1;
+      const saveDataStr = localStorage.getItem(`spellfusion_run_save_${username}_slot_${slotId}`);
+      if (saveDataStr) {
+        try {
+          const saveData = JSON.parse(saveDataStr);
+          window.activeSaveSlot = slotId;
+          
+          const success = deserializeGameRun(saveData);
+          if (success) {
+            const modal = document.getElementById('game-setup-modal');
+            if (modal) modal.classList.remove('active');
+            const lobbyHud = document.getElementById('lobby-hud');
+            if (lobbyHud) lobbyHud.style.display = 'none';
+            
+            if (typeof resumeGameRunLoop === 'function') {
+              resumeGameRunLoop();
+            }
+          }
+        } catch (e) {
+          alert("Lỗi tải file lưu trận: " + e.message);
+        }
+      }
+    });
+  }
+}
+
+setTimeout(setupResumeButtonListener, 200);

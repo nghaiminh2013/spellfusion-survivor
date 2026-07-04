@@ -479,12 +479,40 @@ function startGame() {
   if (sidebarEl) sidebarEl.style.display = '';
 }
 
+function resumeGameRunLoop() {
+  if (typeof initSidebarCooldownPanel === 'function') {
+    initSidebarCooldownPanel();
+  }
+  document.getElementById('start-screen').classList.remove('active');
+  document.getElementById('game-over-screen').classList.remove('active');
+  gameCtx.gameState = 'PLAYING';
+  canvas.style.cursor = 'none';
+  const panel = document.getElementById('wave-control-panel');
+  if (panel) panel.style.display = 'flex';
+  
+  const hudEl = document.getElementById('hud');
+  if (hudEl) hudEl.style.display = '';
+  const minimapEl = document.getElementById('minimap-container');
+  if (minimapEl) minimapEl.style.display = '';
+  const sidebarEl = document.getElementById('cooldown-sidebar');
+  if (sidebarEl) sidebarEl.style.display = '';
+
+  if (window.scene3D && gameCtx.player) {
+    gameCtx.player.init3D();
+  }
+}
+window.resumeGameRunLoop = resumeGameRunLoop;
+
 function endGame() {
   gameCtx.gameState = 'GAME_OVER';
   soundManager.playGameOver();
   canvas.style.cursor = 'auto';
   const panel = document.getElementById('wave-control-panel');
   if (panel) panel.style.display = 'none';
+
+  const username = currentAccount || 'guest';
+  const slotId = window.activeSaveSlot || 1;
+  localStorage.removeItem(`spellfusion_run_save_${username}_slot_${slotId}`);
   
   const minutes = Math.floor(gameCtx.gameTime / 3600).toString().padStart(2, '0');
   const seconds = Math.floor((gameCtx.gameTime % 3600) / 60).toString().padStart(2, '0');
@@ -853,6 +881,9 @@ function activateLobbyHotspot(id) {
       setupMapSelection(MAPS);
       setupDifficultySelection();
       updateDifficultyUI();
+      if (typeof window.setupSaveSlotsUI === 'function') {
+        window.setupSaveSlotsUI();
+      }
       gameSetupModal.classList.add('active');
       gameCtx.gameState = 'LOBBY_MODAL';
     }
@@ -1397,7 +1428,16 @@ function updateCollisions() {
     const hitDist = gameCtx.player.size + e.size;
 
     if (dist < hitDist * hitDist) {
-      gameCtx.player.takeDamage(e.isCharging ? e.damage * 1.5 : e.damage);
+      const rawDmg = e.isCharging ? e.damage * 1.5 : e.damage;
+      gameCtx.player.takeDamage(rawDmg);
+      
+      const equippedAcc = (window.currentSaveData && window.currentSaveData.equippedAccessories) || {};
+      if (equippedAcc.stat === 'thorn_armor') {
+        e.takeDamage(rawDmg * 0.20);
+        for (let j = 0; j < 3; j++) {
+          particleManager.addParticle(e.x, e.y, '#39ff14', 1.2, 1.2, Math.random() * Math.PI * 2, 0.1);
+        }
+      }
       
       if (e.type === 'swarmer') {
         const pushAngle = Math.atan2(e.y - gameCtx.player.y, e.x - gameCtx.player.x);
@@ -1541,7 +1581,7 @@ function update() {
     if (s.active && gameCtx.obstacles) {
       s.hitObstacles = s.hitObstacles || new Set();
       for (const obs of gameCtx.obstacles) {
-        if (!obs.active || !['ore_stone', 'ore_iron', 'ore_gold', 'ore_diamond', 'tree'].includes(obs.type)) continue;
+        if (!obs.active || !['ore_stone', 'ore_iron', 'ore_gold', 'ore_diamond', 'tree', 'herb_red', 'herb_blue', 'herb_yellow'].includes(obs.type)) continue;
         
         if (s.hitObstacles.has(obs)) continue;
         
@@ -1552,6 +1592,11 @@ function update() {
           let dmg = s.damage || 10;
           if (s.player && Math.random() < (s.player.critChance || 0)) {
             dmg *= 2;
+          }
+          
+          const equippedAcc = (window.currentSaveData && window.currentSaveData.equippedAccessories) || {};
+          if (equippedAcc.stat === 'glove_mining') {
+            dmg *= 1.35;
           }
           
           obs.takeDamage(dmg);
@@ -2470,6 +2515,7 @@ const playBtn = document.getElementById('play-btn');
 if (playBtn && !playBtn.dataset.listenerSet) {
   playBtn.dataset.listenerSet = 'true';
   playBtn.addEventListener('click', () => {
+    window.activeSaveSlot = window.selectedSaveSlot || 1;
     gameCtx.gameState = 'PLAYING';
     const modal = document.getElementById('game-setup-modal');
     if (modal) modal.classList.remove('active');

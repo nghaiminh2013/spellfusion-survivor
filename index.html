@@ -823,6 +823,46 @@
       <div
         style="padding: 1.5rem 2rem; display:flex; flex-direction:column; gap:1.4rem; max-height:70vh; overflow-y:auto;">
 
+        <!-- SECTION 0: PHÒNG LƯU TRẬN ĐẤU (SAVE SLOT) -->
+        <div style="border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:1.2rem;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:0.7rem;">
+            <div
+              style="width:22px; height:22px; border-radius:50%; background:rgba(204,51,255,0.15); border:1px solid #cc33ff; display:flex; align-items:center; justify-content:center; font-family:'Orbitron',sans-serif; font-size:0.65rem; color:#cc33ff; font-weight:bold; flex-shrink:0;">
+              0</div>
+            <h3
+              style="font-family:'Orbitron',sans-serif; font-size:0.8rem; color:#cc33ff; letter-spacing:1px; text-transform:uppercase; margin:0;">
+              CHỌN PHÒNG LƯU GAME / TIẾP TỤC</h3>
+          </div>
+          
+          <div style="display:flex; gap:0.6rem; width:100%;" id="save-slots-container">
+            <!-- Slot 1 -->
+            <div class="save-slot-card selected" data-slot="1"
+              style="flex:1; padding:0.6rem; border:1px solid rgba(204,51,255,0.6); background:rgba(204,51,255,0.06); border-radius:10px; cursor:pointer; text-align:center; transition:all 0.2s; display:flex; flex-direction:column; gap:4px; position:relative;">
+              <div style="font-family:'Orbitron',sans-serif; font-size:0.72rem; font-weight:bold; color:#cc33ff;">PHÒNG 1</div>
+              <div class="slot-info" style="font-size:0.62rem; color:#8fa0dd;">PHÒNG TRỐNG</div>
+              <div class="slot-details" style="font-size:0.52rem; color:#a8b2db; display:none;"></div>
+            </div>
+            <!-- Slot 2 -->
+            <div class="save-slot-card" data-slot="2"
+              style="flex:1; padding:0.6rem; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.01); border-radius:10px; cursor:pointer; text-align:center; transition:all 0.2s; display:flex; flex-direction:column; gap:4px; position:relative;">
+              <div style="font-family:'Orbitron',sans-serif; font-size:0.72rem; font-weight:bold; color:#a8b2db;">PHÒNG 2</div>
+              <div class="slot-info" style="font-size:0.62rem; color:#8fa0dd;">PHÒNG TRỐNG</div>
+              <div class="slot-details" style="font-size:0.52rem; color:#a8b2db; display:none;"></div>
+            </div>
+            <!-- Slot 3 -->
+            <div class="save-slot-card" data-slot="3"
+              style="flex:1; padding:0.6rem; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.01); border-radius:10px; cursor:pointer; text-align:center; transition:all 0.2s; display:flex; flex-direction:column; gap:4px; position:relative;">
+              <div style="font-family:'Orbitron',sans-serif; font-size:0.72rem; font-weight:bold; color:#a8b2db;">PHÒNG 3</div>
+              <div class="slot-info" style="font-size:0.62rem; color:#8fa0dd;">PHÒNG TRỐNG</div>
+              <div class="slot-details" style="font-size:0.52rem; color:#a8b2db; display:none;"></div>
+            </div>
+          </div>
+          
+          <button id="resume-save-btn" class="btn" style="display:none; width:100%; border-color:#00ff7f; background:rgba(0,255,127,0.07); color:#00ff7f; margin-top:8px; padding:0.45rem; font-size:0.75rem; letter-spacing:1px; font-weight:bold; font-family:'Orbitron',sans-serif;">
+            📂 TIẾP TỤC TRẬN ĐẤU ĐÃ LƯU
+          </button>
+        </div>
+
         <!-- SECTION 1: CHỌN BẢN ĐỒ -->
         <div>
           <div style="display:flex; align-items:center; gap:8px; margin-bottom:0.7rem;">
@@ -1856,7 +1896,8 @@
       <div class="subtitle">Trận đấu đang tạm hoãn - Nhấn ESC hoặc nút dưới để tiếp tục</div>
 
       <button id="resume-btn" class="btn">TIẾP TỤC</button>
-      <button id="exit-btn" class="btn btn-secondary" style="margin-top: 1rem; width: 100%;">THOÁT RA MENU</button>
+      <button id="save-exit-btn" class="btn" style="margin-top: 1rem; width: 100%; border-color:#00ff7f; background:rgba(0,255,127,0.07); color:#00ff7f;">LƯU VÀ THOÁT</button>
+      <button id="exit-no-save-btn" class="btn btn-secondary" style="margin-top: 1rem; width: 100%;">THOÁT KHÔNG LƯU</button>
     </div>
   </div>
   </div>
