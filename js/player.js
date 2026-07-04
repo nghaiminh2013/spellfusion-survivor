@@ -69,8 +69,41 @@ class Player {
     this.iron = 100;
     this.gold_ore = 50;
     this.diamond_ore = 50;
+    this.herb_red = 0;
+    this.herb_blue = 0;
+    this.herb_yellow = 0;
+    this.potion_health = 0;
+    this.potion_energy = 0;
+    this.potion_speed = 0;
     this.equippedGun = null;
     this.equippedTool = null;
+    
+    const lvlEnergy = charUpgrades.energy || 0;
+    
+    // Base EP scales with energy upgrades (+20 EP/lvl) and other stats upgrades (+3 EP/lvl)
+    this.baseMaxEnergy = 100 + lvlEnergy * 20 + (lvlHp + lvlDmg + lvlSpd) * 3;
+    this.maxEnergy = this.baseMaxEnergy + (this.level - 1) * 5; // scales with level (+5 EP per level)
+    this.energy = this.maxEnergy;
+    this.energyRegen = (2 + (this.level - 1) * 0.1) / 60; // scales regen speed with level (+0.1 EP/s per level)
+    
+    this.activeMode = 'spell'; // 'spell', 'build', 'gun'
+    this.selectedBuildType = 'barricade';
+    this.structureInventory = {
+      barricade: 0,
+      stonewall: 0,
+      ironwall: 0,
+      campfire: 0,
+      spiketrap: 0,
+      turret: 0,
+      crafting_table_2: 0,
+      flame_turret: 0,
+      tesla_turret: 0,
+      electric_fence: 0,
+      elemental_bomb: 0,
+      auto_miner: 0,
+      alchemy_table: 0
+    };
+
     this.dashCooldown = 0;
     this.dashTimer = 0;
     this.dashAngle = 0;
@@ -108,6 +141,8 @@ class Player {
     this.maxRage = 100;
     this.lycanTransformActive = false;
     this.lycanTransformTimer = 0;
+    this.wolfHp = 0;
+    this.maxWolfHp = 100;
 
     // Spell charging and sequences
     this.dragonBreathQueue = 0;
@@ -161,6 +196,12 @@ class Player {
     }
     this.xpNeeded = Math.round(this.level * 8 + 5);
     
+    // Tăng năng lượng tối đa và hồi phục theo cấp độ
+    const oldMax = this.maxEnergy;
+    this.maxEnergy = this.baseMaxEnergy + (this.level - 1) * 5;
+    this.energy = Math.min(this.maxEnergy, this.energy + (this.maxEnergy - oldMax));
+    this.energyRegen = (2 + (this.level - 1) * 0.1) / 60;
+    
     // Tự động mở khóa các chiêu thức theo cấp độ: Lv 2 mở X, Lv 3 mở C, Lv 4 mở V
     if (this.level === 2 && this.spellLevels[1] === 0) {
       this.spellLevels[1] = 1;
@@ -208,10 +249,21 @@ class Player {
 
     let dmg = amount;
     if (this.characterKey === 'wolf' && this.lycanTransformActive) {
-      dmg *= 0.3; // Giảm 70% sát thương nhận vào từ mọi nguồn
+      dmg *= 0.15; // Giảm 85% sát thương nhận vào từ mọi nguồn
     }
 
-    this.hp = Math.max(0, this.hp - dmg);
+    if (this.characterKey === 'wolf' && this.lycanTransformActive) {
+      this.wolfHp = Math.max(0, this.wolfHp - dmg);
+      if (this.wolfHp <= 0) {
+        this.lycanTransformActive = false;
+        this.rage = 0;
+        this.updateHUD();
+        particleManager.createExplosion(this.x, this.y, '#a9a9a9', 20, 5);
+        soundManager.playHit();
+      }
+    } else {
+      this.hp = Math.max(0, this.hp - dmg);
+    }
     this.isInvulnerable = true;
     this.invulnTimer = 0;
     
@@ -220,7 +272,7 @@ class Player {
     particleManager.triggerShake(10);
 
     if (this.characterKey === 'wolf') {
-      this.gainRage(6.0); // Nhận sát thương tăng +6.0 nộ
+      this.gainRage(12.0); // Nhận sát thương tăng +12.0 nộ
     }
   }
 
@@ -241,7 +293,65 @@ class Player {
   }
 
   update(keys, mouse, enemies, playerSpells) {
+    this.energy = Math.min(this.maxEnergy, this.energy + this.energyRegen);
     const equipped = currentSaveData.equippedAccessories || {};
+
+    // Potion consumption hotkeys: 4, 5, 6
+    if (keys['4']) {
+      keys['4'] = false;
+      if (this.potion_health && this.potion_health > 0) {
+        if (this.hp < this.maxHp) {
+          this.potion_health--;
+          this.hp = Math.min(this.maxHp, this.hp + 50);
+          if (typeof soundManager !== 'undefined' && soundManager.playHeal) soundManager.playHeal();
+          if (window.FloatingText && gameCtx.floatingTexts) {
+            gameCtx.floatingTexts.push(new FloatingText(this.x, this.y - 25, "+50 HP 🧪", "#ff3366"));
+          }
+          this.updateHUD();
+        } else {
+          if (window.FloatingText && gameCtx.floatingTexts) {
+            gameCtx.floatingTexts.push(new FloatingText(this.x, this.y - 25, "MÁU ĐÃ ĐẦY!", "#ffaa00"));
+          }
+        }
+      }
+    }
+    if (keys['5']) {
+      keys['5'] = false;
+      if (this.potion_energy && this.potion_energy > 0) {
+        if (this.energy < this.maxEnergy) {
+          this.potion_energy--;
+          this.energy = Math.min(this.maxEnergy, this.energy + 50);
+          if (typeof soundManager !== 'undefined' && soundManager.playOrbPickup) soundManager.playOrbPickup('lightning');
+          if (window.FloatingText && gameCtx.floatingTexts) {
+            gameCtx.floatingTexts.push(new FloatingText(this.x, this.y - 25, "+50 EP 🧪", "#3399ff"));
+          }
+          this.updateHUD();
+        } else {
+          if (window.FloatingText && gameCtx.floatingTexts) {
+            gameCtx.floatingTexts.push(new FloatingText(this.x, this.y - 25, "NĂNG LƯỢNG ĐÃ ĐẦY!", "#ffaa00"));
+          }
+        }
+      }
+    }
+    if (keys['6']) {
+      keys['6'] = false;
+      if (this.potion_speed && this.potion_speed > 0) {
+        this.potion_speed--;
+        this.potionSpeedTimer = 600; // 10s at 60fps
+        if (typeof soundManager !== 'undefined' && soundManager.playOrbPickup) soundManager.playOrbPickup('wind');
+        if (window.FloatingText && gameCtx.floatingTexts) {
+          gameCtx.floatingTexts.push(new FloatingText(this.x, this.y - 25, "TỐC ĐỘ +40% (10s) 🧪", "#ffd700"));
+        }
+        this.updateHUD();
+      }
+    }
+
+    if (this.potionSpeedTimer > 0) {
+      this.potionSpeedTimer--;
+      if (Math.random() < 0.15 && typeof particleManager !== 'undefined') {
+        particleManager.addParticle(this.x, this.y, '#ffd700', 1.5, 0.6, Math.random() * Math.PI * 2, 0.05);
+      }
+    }
 
     if (this.isInvulnerable) {
       this.invulnTimer++;
@@ -296,12 +406,10 @@ class Player {
       }
     }
 
-    // Lycan Transform timer update & decay
+    // Lycan Transform update (now based on Wolf HP, infinite duration until wolfHp reaches 0)
     if (this.lycanTransformActive) {
-      this.lycanTransformTimer--;
-      const maxDur = 480 + (this.spellLevels[3] - 1) * 120;
-      this.rage = Math.max(0, (this.lycanTransformTimer / maxDur) * 100);
-      if (this.lycanTransformTimer <= 0) {
+      this.rage = Math.max(0, (this.wolfHp / this.maxWolfHp) * 100);
+      if (this.wolfHp <= 0) {
         this.lycanTransformActive = false;
         this.rage = 0;
         this.updateHUD();
@@ -315,7 +423,7 @@ class Player {
       targetDamageMod += 0.20;
     }
     if (this.characterKey === 'wolf' && this.lycanTransformActive) {
-      targetDamageMod *= 2.2; // +120% sát thương khi hóa sói
+      targetDamageMod *= 3.2; // +220% sát thương khi hóa sói (buffed!)
     }
     if (this.characterKey === 'umbra' && this.umbraTransformActive) {
       targetDamageMod *= 1.8; // +80% sát thương khi hóa hắc thần
@@ -361,6 +469,10 @@ class Player {
     }
     this.critChance = targetCrit;
 
+    if (this.dashCooldown > 0) {
+      this.dashCooldown--;
+    }
+
     let dx = 0;
     let dy = 0;
     if (keys['w'] || keys['arrowup']) dy -= 1;
@@ -374,27 +486,85 @@ class Player {
       dy /= len;
     }
 
-    let currentSpeed = this.speed;
-    if (window.gameCheats && window.gameCheats.speedMultiplier) {
-      currentSpeed *= window.gameCheats.speedMultiplier;
-    }
-    if (this.windWingsActive) {
-      currentSpeed *= 1.4;
-    }
-    if (this.characterKey === 'wolf' && this.lycanTransformActive) {
-      currentSpeed *= 1.65;
-    }
-    if (this.characterKey === 'umbra' && this.umbraTransformActive) {
-      currentSpeed *= 1.55; // +55% tốc chạy khi hóa hắc thần
+    // Trigger dash logic
+    const customDashKey = (window.gameSettings && window.gameSettings.keyBindings && window.gameSettings.keyBindings.dash) 
+      ? window.gameSettings.keyBindings.dash 
+      : 'q';
+    const isDashKey = keys[customDashKey] || 
+                      (window.gameSettings && window.gameSettings.dashKey === 'space' && keys[' ']) || 
+                      (window.gameSettings && window.gameSettings.dashKey === 'shift' && keys['shift']);
+                      
+    if (isDashKey && this.dashCooldown <= 0 && this.dashTimer <= 0) {
+      // Consume keys immediately
+      keys[customDashKey] = false;
+      keys[' '] = false;
+      keys['shift'] = false;
+
+      const dashCost = 15;
+      if (this.energy >= dashCost) {
+        this.energy -= dashCost;
+        let dashDirX = dx;
+        let dashDirY = dy;
+        if (dashDirX === 0 && dashDirY === 0) {
+          dashDirX = Math.cos(this.angle);
+          dashDirY = Math.sin(this.angle);
+        }
+        this.dashAngle = Math.atan2(dashDirY, dashDirX);
+        this.dashTimer = 12; // Dash lasts 12 frames (0.2s)
+        this.dashCooldown = 75; // 1.25s cooldown
+        
+        if (soundManager.playSpell) {
+          soundManager.playSpell('wind_wind');
+        }
+        for (let i = 0; i < 12; i++) {
+          const pAngle = this.dashAngle + Math.PI + (Math.random() * 0.8 - 0.4);
+          particleManager.addParticle(this.x, this.y, '#00f3ff', Math.random() * 3 + 1, Math.random() * 4 + 2, pAngle, 0.06);
+        }
+      } else {
+        if (window.FloatingText && gameCtx.floatingTexts) {
+          gameCtx.floatingTexts.push(new FloatingText(this.x, this.y - 30, "CẦN 15 NĂNG LƯỢNG!", "#ff0055"));
+        }
+      }
     }
 
-    this.vx += dx * (currentSpeed * 0.12);
-    this.vy += dy * (currentSpeed * 0.12);
+    if (this.dashTimer > 0) {
+      this.dashTimer--;
+      this.vx = Math.cos(this.dashAngle) * 16;
+      this.vy = Math.sin(this.dashAngle) * 16;
+      this.isInvulnerable = true;
+      
+      if (gameCtx.gameTime % 2 === 0) {
+        particleManager.addParticle(this.x, this.y, '#ffffff', 2.5, 0.5, this.dashAngle + Math.PI, 0.05);
+        particleManager.addParticle(this.x, this.y, '#00f3ff', 2, 0.5, this.dashAngle + Math.PI, 0.05);
+      }
+      this.x += this.vx;
+      this.y += this.vy;
+    } else {
+      let currentSpeed = this.speed;
+      if (window.gameCheats && window.gameCheats.speedMultiplier) {
+        currentSpeed *= window.gameCheats.speedMultiplier;
+      }
+      if (this.windWingsActive) {
+        currentSpeed *= 1.4;
+      }
+      if (this.characterKey === 'wolf' && this.lycanTransformActive) {
+        currentSpeed *= 1.90;
+      }
+      if (this.characterKey === 'umbra' && this.umbraTransformActive) {
+        currentSpeed *= 1.55;
+      }
+      if (this.potionSpeedTimer && this.potionSpeedTimer > 0) {
+        currentSpeed *= 1.40;
+      }
 
-    this.vx *= this.friction;
-    this.vy *= this.friction;
-    this.x += this.vx;
-    this.y += this.vy;
+      this.vx += dx * (currentSpeed * 0.12);
+      this.vy += dy * (currentSpeed * 0.12);
+
+      this.vx *= this.friction;
+      this.vy *= this.friction;
+      this.x += this.vx;
+      this.y += this.vy;
+    }
 
     if (Math.hypot(this.vx, this.vy) > 0.4) {
       const char = CHARACTERS[this.characterKey] || CHARACTERS['ignis'];
@@ -507,28 +677,94 @@ class Player {
     }
 
     // Basic Attack: holding Left Click shoots towards mouse (or fires equipped gun)
-    if (mouse.clicked && this.basicAttackTimer <= 0) {
-      if (this.equippedGun) {
+    if (mouse.clicked && this.basicAttackTimer <= 0 && this.activeMode !== 'build') {
+      if (this.activeMode === 'gun' && this.equippedGun) {
         this.fireEquippedGun(playerSpells, mouse.x, mouse.y);
         let gunCD = 15;
         if (this.equippedGun === 'rifle') gunCD = 7;
         else if (this.equippedGun === 'shotgun') gunCD = 35;
         this.basicAttackTimer = Math.max(2, gunCD * this.cooldownModifier);
-      } else {
+      } else if (this.activeMode === 'spell') {
         this.castBasicAttack(playerSpells, mouse.x, mouse.y);
         const baseCD = SPELL_RECIPES[this.basicAttackType].cd || 20;
         this.basicAttackTimer = Math.max(4, baseCD * this.cooldownModifier);
       }
     }
 
+    // Structure Placement in Build Mode
+    if (mouse.clicked && this.basicAttackTimer <= 0 && this.activeMode === 'build') {
+      const type = this.selectedBuildType;
+      const qty = this.structureInventory[type] || 0;
+      if (qty > 0) {
+        const wx = mouse.x;
+        const wy = mouse.y;
+        const dist = Math.hypot(wx - this.x, wy - this.y);
+        
+        if (dist > 250) {
+          if (window.FloatingText && gameCtx.floatingTexts && gameCtx.gameTime % 15 === 0) {
+            gameCtx.floatingTexts.push(new FloatingText(this.x, this.y - 30, "QUÁ XA TẦM XÂY DỰNG (250px)!", "#ff0055"));
+          }
+        } else {
+          const tempObs = new Obstacle(wx, wy, type);
+          const check = typeof window.canPlaceStructureAt === 'function' ? window.canPlaceStructureAt(wx, wy, tempObs.size) : { valid: true };
+          if (check.valid) {
+            gameCtx.obstacles.push(tempObs);
+            
+            if (type === 'crafting_table_2') {
+              this.hasCraftingTable2Unlocked = true;
+              if (window.FloatingText && gameCtx.floatingTexts) {
+                gameCtx.floatingTexts.push(new FloatingText(this.x, this.y - 50, "ĐÃ HỢP NHẤT BÀN CHẾ TẠO 2 VÀO NGƯỜI!", "#ffe600"));
+              }
+            }
+
+            this.structureInventory[type]--;
+            this.basicAttackTimer = 15; // 0.25s cd
+            
+            if (soundManager.playSpell) {
+              soundManager.playSpell('earth_earth');
+            }
+            for (let i = 0; i < 12; i++) {
+              particleManager.addParticle(wx, wy, tempObs.color, Math.random() * 2.5 + 1, Math.random() * 2 + 1, Math.random() * Math.PI * 2, 0.05);
+            }
+            
+            if (typeof window.updateBuildHUD === 'function') window.updateBuildHUD();
+            updateGameHUD();
+          } else {
+            if (window.FloatingText && gameCtx.floatingTexts && gameCtx.gameTime % 25 === 0) {
+              gameCtx.floatingTexts.push(new FloatingText(this.x, this.y - 30, check.message, "#ff0055"));
+            }
+          }
+        }
+      } else {
+        if (window.FloatingText && gameCtx.floatingTexts && gameCtx.gameTime % 25 === 0) {
+          const structName = window.BUILD_ITEMS_DATA[type] ? window.BUILD_ITEMS_DATA[type].name : type.toUpperCase();
+          const buildMenuKey = (window.gameSettings && window.gameSettings.keyBindings && window.gameSettings.keyBindings.buildMenu)
+            ? window.gameSettings.keyBindings.buildMenu.toUpperCase()
+            : 'B';
+          gameCtx.floatingTexts.push(new FloatingText(this.x, this.y - 30, `CẦN CHẾ TẠO THÊM [${structName}] TRONG [${buildMenuKey}]!`, "#ff0055"));
+        }
+      }
+    }
+
     // Z, X, C, V Cast: Z is index 0, X is 1, C is 2, V is 3
-    const spellKeys = ['z', 'x', 'c', 'v'];
+    const spellKeys = ['spell1', 'spell2', 'spell3', 'spell4'];
+    const baseSpellCosts = [10, 15, 20, 35];
+    const spellUpgrades = currentSaveData.spellUpgrades || {};
+    const charSpellUpgrades = spellUpgrades[this.characterKey] || [0, 0, 0, 0];
+    const spellCosts = baseSpellCosts.map((base, idx) => {
+      const permLvl = charSpellUpgrades[idx] || 0;
+      return Math.max(1, Math.round(base * (1 - permLvl * 0.10))); // -10% EP cost per permanent level
+    });
     const currentlyChargingIndex = this.isChargingSpell.indexOf(true);
     const hasGCDActive = (gameCtx.gameTime - (this.lastSpellCastFrame || 0) < 35);
     let spellActionTaken = false;
 
     for (let i = 0; i < 4; i++) {
-      const key = spellKeys[i];
+      const bindingKey = spellKeys[i];
+      const customKey = (window.gameSettings && window.gameSettings.keyBindings && window.gameSettings.keyBindings[bindingKey]) 
+        ? window.gameSettings.keyBindings[bindingKey] 
+        : ['z', 'x', 'c', 'v'][i];
+      
       const spellKey = this.spells[i];
       const isHoldToCharge = (this.characterKey === 'ignis' && (spellKey === 'ignis_x' || spellKey === 'ignis_v'));
 
@@ -542,7 +778,7 @@ class Player {
         // We can only start charging if no GCD is active
         const canStartCharge = this.isChargingSpell[i] || !hasGCDActive;
 
-        if (keys[key] && this.spellLevels[i] > 0 && this.spellCooldowns[i] <= 0 && !spellActionTaken && canStartCharge) {
+        if (keys[customKey] && this.spellLevels[i] > 0 && this.spellCooldowns[i] <= 0 && !spellActionTaken && canStartCharge && this.activeMode !== 'build') {
           if (!this.isChargingSpell[i]) {
             this.isChargingSpell[i] = true;
             this.spellCharges[i] = 0;
@@ -563,12 +799,22 @@ class Player {
         } else {
           // Key released or not pressed
           if (this.isChargingSpell[i]) {
-            this.castChargedSpell(playerSpells, mouse.x, mouse.y, i, this.spellCharges[i]);
-            this.spellCooldowns[i] = getActualSpellCD(this, i);
-            this.isChargingSpell[i] = false;
-            this.spellCharges[i] = 0;
-            this.lastSpellCastFrame = gameCtx.gameTime; // Trigger GCD on release
-            spellActionTaken = true;
+            const cost = spellCosts[i];
+            if (this.energy >= cost) {
+              this.energy -= cost;
+              this.castChargedSpell(playerSpells, mouse.x, mouse.y, i, this.spellCharges[i]);
+              this.spellCooldowns[i] = getActualSpellCD(this, i);
+              this.isChargingSpell[i] = false;
+              this.spellCharges[i] = 0;
+              this.lastSpellCastFrame = gameCtx.gameTime; // Trigger GCD on release
+              spellActionTaken = true;
+            } else {
+              if (window.FloatingText && gameCtx.floatingTexts) {
+                gameCtx.floatingTexts.push(new FloatingText(this.x, this.y - 30, `CẦN ${cost} NĂNG LƯỢNG!`, "#ff0055"));
+              }
+              this.isChargingSpell[i] = false;
+              this.spellCharges[i] = 0;
+            }
           }
         }
       } else {
@@ -586,15 +832,23 @@ class Player {
           canCast = (this.spellCooldowns[i] <= 0);
         }
 
-        if (keys[key] && this.spellLevels[i] > 0 && canCast && !spellActionTaken && !hasGCDActive) {
-          this.castIndividualSpell(playerSpells, mouse.x, mouse.y, i);
-          if (this.characterKey === 'wolf' && i === 3) {
-            this.spellCooldowns[i] = 0;
+        if (keys[customKey] && this.spellLevels[i] > 0 && canCast && !spellActionTaken && !hasGCDActive && this.activeMode !== 'build') {
+          const cost = spellCosts[i];
+          if (this.energy >= cost) {
+            this.energy -= cost;
+            this.castIndividualSpell(playerSpells, mouse.x, mouse.y, i);
+            if (this.characterKey === 'wolf' && i === 3) {
+              this.spellCooldowns[i] = 0;
+            } else {
+              this.spellCooldowns[i] = getActualSpellCD(this, i);
+            }
+            this.lastSpellCastFrame = gameCtx.gameTime; // Trigger GCD
+            spellActionTaken = true;
           } else {
-            this.spellCooldowns[i] = getActualSpellCD(this, i);
+            if (window.FloatingText && gameCtx.floatingTexts && gameCtx.gameTime % 25 === 0) {
+              gameCtx.floatingTexts.push(new FloatingText(this.x, this.y - 30, `CẦN ${cost} NĂNG LƯỢNG!`, "#ff0055"));
+            }
           }
-          this.lastSpellCastFrame = gameCtx.gameTime; // Trigger GCD
-          spellActionTaken = true;
         }
       }
     }
@@ -1037,9 +1291,9 @@ class Player {
       }
       else if (spellKey === 'wolf_z') {
         const lvl = this.spellLevels[0] || 1;
-        let count = 4;
-        if (lvl >= 5) count = 6;
-        else if (lvl >= 3) count = 5;
+        let count = 5;
+        if (lvl >= 5) count = 8;
+        else if (lvl >= 3) count = 6;
         
         for (let j = 0; j < count; j++) {
           const angle = this.angle + (j - (count - 1) / 2) * 0.4;
@@ -1050,6 +1304,7 @@ class Player {
       }
       else if (spellKey === 'wolf_x') {
         playerSpells.push(new Spell(this.x, this.y, this.x, this.y, 'wolf_x', this));
+        this.gainRage(12); // Tích thêm 12 nộ khi gầm thét
         soundManager.playExplosion();
       }
       else if (spellKey === 'wolf_c') {
@@ -1063,11 +1318,16 @@ class Player {
         s.angle = leapAngle;
         this.isInvulnerable = true;
         this.invulnTimer = this.invulnDuration - 20;
+        this.gainRage(18); // Tích thêm 18 nộ khi vồ nện
         playerSpells.push(s);
       }
       else if (spellKey === 'wolf_v') {
         this.lycanTransformActive = true;
-        this.lycanTransformTimer = 480 + (this.spellLevels[spellIndex] - 1) * 120;
+        
+        // Thiết lập máu dạng sói riêng biệt dựa trên level của chiêu V
+        const lvl = this.spellLevels[spellIndex] || 1;
+        this.maxWolfHp = this.maxHp * (1.5 + (lvl - 1) * 0.25);
+        this.wolfHp = this.maxWolfHp;
         
         // Vụ nổ Triệu Hồi Hủy Diệt khi biến hình sói
         soundManager.playExplosion();
@@ -1155,7 +1415,7 @@ class Player {
       }
       else if (spellKey === 'chronos_v') {
         const lvl = this.spellLevels[spellIndex];
-        this.hp = Math.min(this.maxHp, this.hp + this.maxHp * 0.35);
+        this.hp = Math.min(this.maxHp, this.hp + this.maxHp * 0.50); // Tăng hồi máu lên 50% HP tối đa
         
         soundManager.playExplosion();
         particleManager.triggerShake(20);
@@ -1163,7 +1423,7 @@ class Player {
         
         for (const enemy of gameCtx.enemies) {
           if (enemy.dead) continue;
-          enemy.applyEffect('freeze_solid', 180 + (lvl - 1) * 60);
+          enemy.applyEffect('freeze_solid', 300 + (lvl - 1) * 60); // Đóng băng cứng quái trong 5 giây (300 frames)
           particleManager.createExplosion(enemy.x, enemy.y, '#00f3ff', 3, 1.0);
         }
         
@@ -1234,10 +1494,9 @@ class Player {
 
         if (this.characterKey === 'wolf' && i === 3) {
           if (this.lycanTransformActive) {
-            const secondsLeft = (this.lycanTransformTimer / 60).toFixed(1);
-            slotEl.querySelector('.spell-hud-name').textContent = `HÓA SÓI (${secondsLeft}s)`;
+            slotEl.querySelector('.spell-hud-name').textContent = `HÓA SÓI (${Math.round(this.wolfHp)} HP)`;
             if (cdOverlay) {
-              const pct = (this.rage / this.maxRage) * 100;
+              const pct = (this.wolfHp / this.maxWolfHp) * 100;
               cdOverlay.style.height = `${100 - pct}%`;
             }
             slotEl.classList.remove('ready-blink');
@@ -1291,12 +1550,12 @@ class Player {
         rowEl.className = 'sidebar-spell-row active';
         if (this.characterKey === 'wolf' && i === 3) {
           if (this.lycanTransformActive) {
-            const secondsLeft = (this.lycanTransformTimer / 60).toFixed(1);
-            if (nameEl) nameEl.textContent = `HÓA SÓI (${secondsLeft}s)`;
-            if (progressInner) progressInner.style.width = `${100 - (this.rage / this.maxRage)*100}%`;
-            if (textEl) textEl.textContent = `${secondsLeft}s`;
+            const hpPct = Math.round((this.wolfHp / this.maxWolfHp) * 100);
+            if (nameEl) nameEl.textContent = `HP SÓI: ${Math.round(this.wolfHp)}/${Math.round(this.maxWolfHp)}`;
+            if (progressInner) progressInner.style.width = `${100 - hpPct}%`;
+            if (textEl) textEl.textContent = `${hpPct}%`;
             if (cdTextEl) {
-              cdTextEl.textContent = `${secondsLeft}s`;
+              cdTextEl.textContent = `${hpPct}%`;
               cdTextEl.style.display = 'inline';
             }
           } else {
@@ -2037,72 +2296,304 @@ class Player {
     this.head.receiveShadow = true;
     this.torso.add(this.head);
 
-    // Wizard Hat (Cone + Rim)
-    this.hatGroup = new THREE.Group();
-    this.hatGroup.position.set(0, 6, 0);
-    
-    const hatRimGeo = new THREE.CylinderGeometry(10, 10, 1, 16);
-    const hatRimMat = new THREE.MeshStandardMaterial({ color: colorVal, roughness: 0.7 });
-    const hatRim = new THREE.Mesh(hatRimGeo, hatRimMat);
-    this.hatGroup.add(hatRim);
-    
-    const hatConeGeo = new THREE.ConeGeometry(6, 12, 16);
-    const hatConeMat = new THREE.MeshStandardMaterial({ color: colorVal, roughness: 0.7 });
-    const hatCone = new THREE.Mesh(hatConeGeo, hatConeMat);
-    hatCone.position.y = 6;
-    this.hatGroup.add(hatCone);
-    
-    this.head.add(this.hatGroup);
+    // Check if the current character is one of the 8 Heroes
+    const isHero = ['nina', 'rado', 'kaelen', 'zenix', 'goliath', 'valkyrie', 'lucius', 'eldrin'].includes(this.characterKey);
 
-    // Legs
-    const legGeo = new THREE.BoxGeometry(5, 10, 5);
-    const legMat = new THREE.MeshStandardMaterial({ color: 0x111122, roughness: 0.9 });
-    
-    this.leftLeg = new THREE.Mesh(legGeo, legMat);
-    this.leftLeg.position.set(-4, -14, 0);
-    this.leftLeg.castShadow = true;
-    this.leftLeg.receiveShadow = true;
-    this.torso.add(this.leftLeg);
-
-    this.rightLeg = new THREE.Mesh(legGeo, legMat);
-    this.rightLeg.position.set(4, -14, 0);
-    this.rightLeg.castShadow = true;
-    this.rightLeg.receiveShadow = true;
-    this.torso.add(this.rightLeg);
-
-    // Arms
-    const armGeo = new THREE.BoxGeometry(4, 16, 4);
-    const armMat = new THREE.MeshStandardMaterial({ color: colorVal, roughness: 0.7 });
-    
-    this.leftArm = new THREE.Mesh(armGeo, armMat);
-    this.leftArm.position.set(-10, 2, 0);
-    this.leftArm.castShadow = true;
-    this.leftArm.receiveShadow = true;
-    this.torso.add(this.leftArm);
-
-    this.rightArm = new THREE.Mesh(armGeo, armMat);
-    this.rightArm.position.set(10, 2, 0);
-    this.rightArm.castShadow = true;
-    this.rightArm.receiveShadow = true;
-    this.torso.add(this.rightArm);
-
-    // Staff / Weapon
-    this.staffGroup = new THREE.Group();
-    this.staffGroup.position.set(0, -6, 4);
-    this.staffGroup.rotation.x = Math.PI / 3;
-    
-    const staffShaftGeo = new THREE.CylinderGeometry(1.2, 1.2, 32, 8);
-    const staffShaftMat = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.9 });
-    const staffShaft = new THREE.Mesh(staffShaftGeo, staffShaftMat);
-    this.staffGroup.add(staffShaft);
-    
-    const staffGemGeo = new THREE.SphereGeometry(3, 8, 8);
-    const staffGemMat = new THREE.MeshBasicMaterial({ color: colorVal });
-    this.staffGem = new THREE.Mesh(staffGemGeo, staffGemMat);
-    this.staffGem.position.y = 17;
-    this.staffGroup.add(this.staffGem);
-    
-    this.rightArm.add(this.staffGroup);
+    if (isHero) {
+      // 1. DỰNG MŨ CHIẾN BINH (HELMET/HOOD/CROWN) CHO DŨNG SĨ
+      this.hatGroup = new THREE.Group();
+      this.hatGroup.position.set(0, 6, 0);
+      
+      const steelMat = new THREE.MeshStandardMaterial({ color: 0x8e8e93, roughness: 0.2, metalness: 0.8 });
+      const goldMat = new THREE.MeshStandardMaterial({ color: 0xffd700, roughness: 0.1, metalness: 0.9 });
+      
+      if (this.characterKey === 'nina') {
+        // Mũ visors của Hiệp Sĩ
+        const helm = new THREE.Mesh(new THREE.BoxGeometry(11, 8, 11), steelMat);
+        this.hatGroup.add(helm);
+        // Visor kính che mặt
+        const visor = new THREE.Mesh(new THREE.BoxGeometry(9, 3, 11.2), new THREE.MeshBasicMaterial({ color: 0x00aaff }));
+        visor.position.set(0, 1, 0.2);
+        this.hatGroup.add(visor);
+        // Mào đỏ trên đầu
+        const crest = new THREE.Mesh(new THREE.BoxGeometry(2, 5, 8), new THREE.MeshStandardMaterial({ color: 0xff3366, roughness: 0.6 }));
+        crest.position.set(0, 5, -1);
+        this.hatGroup.add(crest);
+      } 
+      else if (this.characterKey === 'rado') {
+        // Mũ sắt chiến binh
+        const helm = new THREE.Mesh(new THREE.BoxGeometry(11, 4, 11), steelMat);
+        this.hatGroup.add(helm);
+        // 2 chiếc sừng trắng
+        const hornMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 });
+        const leftHorn = new THREE.Mesh(new THREE.ConeGeometry(2, 7, 8), hornMat);
+        leftHorn.position.set(-5, 3, 0);
+        leftHorn.rotation.z = Math.PI / 4;
+        this.hatGroup.add(leftHorn);
+        const rightHorn = new THREE.Mesh(new THREE.ConeGeometry(2, 7, 8), hornMat);
+        rightHorn.position.set(5, 3, 0);
+        rightHorn.rotation.z = -Math.PI / 4;
+        this.hatGroup.add(rightHorn);
+      } 
+      else if (this.characterKey === 'kaelen') {
+        // Mũ trùm xanh lá của Cung Thủ
+        const hoodMat = new THREE.MeshStandardMaterial({ color: 0x2e7d32, roughness: 0.8 });
+        const hood = new THREE.Mesh(new THREE.BoxGeometry(13, 11, 13), hoodMat);
+        hood.position.set(0, 1, -1);
+        this.hatGroup.add(hood);
+      } 
+      else if (this.characterKey === 'zenix') {
+        // Mặt nạ Ninja
+        const maskMat = new THREE.MeshStandardMaterial({ color: 0x1c1c1e, roughness: 0.7 });
+        const mask = new THREE.Mesh(new THREE.BoxGeometry(13, 6, 13), maskMat);
+        mask.position.set(0, -2, 0.2);
+        this.hatGroup.add(mask);
+      } 
+      else if (this.characterKey === 'goliath') {
+        // Mũ giáp sắt nặng khổng lồ
+        const giantHelm = new THREE.Mesh(new THREE.BoxGeometry(13, 10, 13), steelMat);
+        this.hatGroup.add(giantHelm);
+        // Kính ngắm màu đỏ neon
+        const eyeSlot = new THREE.Mesh(new THREE.BoxGeometry(10, 1.8, 13.2), new THREE.MeshBasicMaterial({ color: 0xff003c }));
+        eyeSlot.position.set(0, 1, 0.1);
+        this.hatGroup.add(eyeSlot);
+      } 
+      else if (this.characterKey === 'valkyrie') {
+        // Mũ cánh Valkyrie vàng kim
+        const helm = new THREE.Mesh(new THREE.BoxGeometry(10.5, 4, 10.5), goldMat);
+        this.hatGroup.add(helm);
+        // Cánh bạc 2 bên mũ
+        const wingMat = new THREE.MeshStandardMaterial({ color: 0xe5e5ea, roughness: 0.1, metalness: 0.8 });
+        const leftWing = new THREE.Mesh(new THREE.BoxGeometry(1, 9, 5), wingMat);
+        leftWing.position.set(-6, 3, -1);
+        leftWing.rotation.y = Math.PI / 6;
+        leftWing.rotation.z = -Math.PI / 12;
+        this.hatGroup.add(leftWing);
+        const rightWing = new THREE.Mesh(new THREE.BoxGeometry(1, 9, 5), wingMat);
+        rightWing.position.set(6, 3, -1);
+        rightWing.rotation.y = -Math.PI / 6;
+        rightWing.rotation.z = Math.PI / 12;
+        this.hatGroup.add(rightWing);
+      } 
+      else if (this.characterKey === 'lucius') {
+        // Vương miện Thánh Quang
+        const crownBase = new THREE.Mesh(new THREE.CylinderGeometry(5.5, 5.5, 3, 16), goldMat);
+        this.hatGroup.add(crownBase);
+        // Các gai vương miện
+        for (let i = 0; i < 6; i++) {
+          const spike = new THREE.Mesh(new THREE.ConeGeometry(1, 4, 4), goldMat);
+          const angle = (i / 6) * Math.PI * 2;
+          spike.position.set(Math.cos(angle) * 5.2, 3, Math.sin(angle) * 5.2);
+          spike.rotation.y = -angle;
+          spike.rotation.x = Math.PI / 12;
+          this.hatGroup.add(spike);
+        }
+      } 
+      else if (this.characterKey === 'eldrin') {
+        // Mũ trùm pha lê tinh thể
+        const crystalMat = new THREE.MeshStandardMaterial({ color: 0x9d00ff, roughness: 0.1, metalness: 0.2, transparent: true, opacity: 0.8 });
+        const cry = new THREE.Mesh(new THREE.OctahedronGeometry(6.5, 0), crystalMat);
+        cry.position.set(0, 3, 0);
+        this.hatGroup.add(cry);
+      }
+      
+      this.head.add(this.hatGroup);
+    } else {
+      // Wizard Hat (Cone + Rim)
+      this.hatGroup = new THREE.Group();
+      this.hatGroup.position.set(0, 6, 0);
+      
+      const hatRimGeo = new THREE.CylinderGeometry(10, 10, 1, 16);
+      const hatRimMat = new THREE.MeshStandardMaterial({ color: colorVal, roughness: 0.7 });
+      const hatRim = new THREE.Mesh(hatRimGeo, hatRimMat);
+      this.hatGroup.add(hatRim);
+      
+      const hatConeGeo = new THREE.ConeGeometry(6, 12, 16);
+      const hatConeMat = new THREE.MeshStandardMaterial({ color: colorVal, roughness: 0.7 });
+      const hatCone = new THREE.Mesh(hatConeGeo, hatConeMat);
+      hatCone.position.y = 6;
+      this.hatGroup.add(hatCone);
+      
+      this.head.add(this.hatGroup);
+    }
+ 
+     // Legs
+     const legGeo = new THREE.BoxGeometry(5, 10, 5);
+     const legMat = new THREE.MeshStandardMaterial({ color: 0x111122, roughness: 0.9 });
+     
+     this.leftLeg = new THREE.Mesh(legGeo, legMat);
+     this.leftLeg.position.set(-4, -14, 0);
+     this.leftLeg.castShadow = true;
+     this.leftLeg.receiveShadow = true;
+     this.torso.add(this.leftLeg);
+ 
+     this.rightLeg = new THREE.Mesh(legGeo, legMat);
+     this.rightLeg.position.set(4, -14, 0);
+     this.rightLeg.castShadow = true;
+     this.rightLeg.receiveShadow = true;
+     this.torso.add(this.rightLeg);
+ 
+     // Arms
+     const armGeo = new THREE.BoxGeometry(4, 16, 4);
+     const armMat = new THREE.MeshStandardMaterial({ color: colorVal, roughness: 0.7 });
+     
+     this.leftArm = new THREE.Mesh(armGeo, armMat);
+     this.leftArm.position.set(-10, 2, 0);
+     this.leftArm.castShadow = true;
+     this.leftArm.receiveShadow = true;
+     this.torso.add(this.leftArm);
+ 
+     this.rightArm = new THREE.Mesh(armGeo, armMat);
+     this.rightArm.position.set(10, 2, 0);
+     this.rightArm.castShadow = true;
+     this.rightArm.receiveShadow = true;
+     this.torso.add(this.rightArm);
+ 
+     // Staff / Weapon
+     this.staffGroup = new THREE.Group();
+     this.staffGroup.position.set(0, -6, 4);
+     this.staffGroup.rotation.x = Math.PI / 3;
+ 
+     if (isHero) {
+       // 2. DỰNG VŨ KHÍ 3D ĐỘC QUYỀN CHO TỪNG DŨNG SĨ
+       const steelMat = new THREE.MeshStandardMaterial({ color: 0xb3b3b7, roughness: 0.2, metalness: 0.9 });
+       const goldMat = new THREE.MeshStandardMaterial({ color: 0xffd700, roughness: 0.1, metalness: 0.9 });
+       const woodMat = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.9 });
+ 
+       if (this.characterKey === 'nina') {
+         // Kiếm Thép phát sáng
+         const hilt = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 8, 8), woodMat);
+         hilt.rotation.x = Math.PI / 2;
+         this.staffGroup.add(hilt);
+         
+         const guard = new THREE.Mesh(new THREE.BoxGeometry(5, 1.2, 1.5), steelMat);
+         guard.position.y = 4;
+         this.staffGroup.add(guard);
+         
+         const blade = new THREE.Mesh(new THREE.BoxGeometry(1.6, 22, 0.5), new THREE.MeshBasicMaterial({ color: 0x00f3ff }));
+         blade.position.y = 15;
+         this.staffGroup.add(blade);
+ 
+         // Tạo Khiên chắn trên Tay Trái (leftArm)
+         const shieldGroup = new THREE.Group();
+         shieldGroup.position.set(-2, 0, 2);
+         shieldGroup.rotation.y = -Math.PI / 4;
+         const shieldPlat = new THREE.Mesh(new THREE.BoxGeometry(10, 13, 1.5), steelMat);
+         shieldGroup.add(shieldPlat);
+         const shieldTrim = new THREE.Mesh(new THREE.BoxGeometry(10.5, 3, 2), goldMat);
+         shieldTrim.position.y = 3;
+         shieldGroup.add(shieldTrim);
+         this.leftArm.add(shieldGroup);
+       } 
+       else if (this.characterKey === 'rado') {
+         // Rìu Chiến Khổng Lồ
+         const shaft = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 32, 8), woodMat);
+         this.staffGroup.add(shaft);
+         // Lưỡi rìu kép
+         const axeBladeMat = new THREE.MeshStandardMaterial({ color: 0x7a7a7d, roughness: 0.1, metalness: 0.9 });
+         const leftBlade = new THREE.Mesh(new THREE.BoxGeometry(8, 9, 0.6), axeBladeMat);
+         leftBlade.position.set(-4.5, 10, 0);
+         this.staffGroup.add(leftBlade);
+         const rightBlade = new THREE.Mesh(new THREE.BoxGeometry(8, 9, 0.6), axeBladeMat);
+         rightBlade.position.set(4.5, 10, 0);
+         this.staffGroup.add(rightBlade);
+       } 
+       else if (this.characterKey === 'kaelen') {
+         // Cung Thần Quang phát sáng (gắn bên tay trái)
+         const bowGroup = new THREE.Group();
+         bowGroup.position.set(-2, 0, 3);
+         const arcGeo = new THREE.BoxGeometry(1.5, 26, 1.5);
+         const arcMat = new THREE.MeshBasicMaterial({ color: 0x00ff7f });
+         const bowArc = new THREE.Mesh(arcGeo, arcMat);
+         bowGroup.add(bowArc);
+         // Dây cung mảnh
+         const stringGeo = new THREE.BoxGeometry(0.2, 24, 0.2);
+         const stringMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+         const bowString = new THREE.Mesh(stringGeo, stringMat);
+         bowString.position.x = -1.5;
+         bowGroup.add(bowString);
+         this.leftArm.add(bowGroup);
+ 
+         // Tay phải cầm mũi tên nhỏ làm cảnh
+         const arrow = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 18, 8), woodMat);
+         arrow.rotation.x = Math.PI / 2;
+         this.staffGroup.add(arrow);
+       } 
+       else if (this.characterKey === 'zenix') {
+         // Đeo 2 vỏ kiếm Katana chéo sau lưng
+         const scabbardMat = new THREE.MeshStandardMaterial({ color: 0x111115, roughness: 0.8 });
+         const scab1 = new THREE.Mesh(new THREE.BoxGeometry(1.5, 18, 1.5), scabbardMat);
+         scab1.position.set(-4, 0, -6);
+         scab1.rotation.z = Math.PI / 6;
+         scab1.rotation.x = -Math.PI / 12;
+         this.torso.add(scab1);
+         
+         const scab2 = new THREE.Mesh(new THREE.BoxGeometry(1.5, 18, 1.5), scabbardMat);
+         scab2.position.set(4, 0, -6);
+         scab2.rotation.z = -Math.PI / 6;
+         scab2.rotation.x = -Math.PI / 12;
+         this.torso.add(scab2);
+ 
+         // Tay phải cầm Katana đỏ rực
+         const hilt = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 6, 8), scabbardMat);
+         this.staffGroup.add(hilt);
+         const blade = new THREE.Mesh(new THREE.BoxGeometry(1.0, 24, 0.3), new THREE.MeshBasicMaterial({ color: 0xff003c }));
+         blade.position.y = 13;
+         this.staffGroup.add(blade);
+       } 
+       else if (this.characterKey === 'goliath') {
+         // Búa Tạ Thép siêu to khổng lồ
+         const shaft = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 32, 8), steelMat);
+         this.staffGroup.add(shaft);
+         const head = new THREE.Mesh(new THREE.BoxGeometry(11, 14, 11), steelMat);
+         head.position.y = 12;
+         this.staffGroup.add(head);
+       } 
+       else if (this.characterKey === 'valkyrie') {
+         // Ngọn Thương Ánh Sáng dài
+         const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 38, 8), goldMat);
+         this.staffGroup.add(shaft);
+         // Đầu thương phát sáng hình nón dẹt
+         const tip = new THREE.Mesh(new THREE.ConeGeometry(2.5, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
+         tip.position.y = 21;
+         this.staffGroup.add(tip);
+       } 
+       else if (this.characterKey === 'lucius') {
+         // Thánh Kiếm Excalibur vàng rực
+         const hilt = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 7, 8), goldMat);
+         this.staffGroup.add(hilt);
+         const guard = new THREE.Mesh(new THREE.BoxGeometry(6, 1.5, 1.5), goldMat);
+         guard.position.y = 4;
+         this.staffGroup.add(guard);
+         const blade = new THREE.Mesh(new THREE.BoxGeometry(1.8, 25, 0.6), new THREE.MeshBasicMaterial({ color: 0xffd700 }));
+         blade.position.y = 15;
+         this.staffGroup.add(blade);
+       } 
+       else if (this.characterKey === 'eldrin') {
+         // Kiếm Phép Thạch Anh lấp lánh tím xanh
+         const hilt = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 6, 8), steelMat);
+         this.staffGroup.add(hilt);
+         const blade = new THREE.Mesh(new THREE.BoxGeometry(1.6, 22, 1.2), new THREE.MeshBasicMaterial({ color: 0xcc00ff }));
+         blade.position.y = 13;
+         this.staffGroup.add(blade);
+       }
+       
+       this.rightArm.add(this.staffGroup);
+     } else {
+       // Trượng phép của Pháp Sư nguyên tố
+       const staffShaftGeo = new THREE.CylinderGeometry(1.2, 1.2, 32, 8);
+       const staffShaftMat = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.9 });
+       const staffShaft = new THREE.Mesh(staffShaftGeo, staffShaftMat);
+       this.staffGroup.add(staffShaft);
+       
+       const staffGemGeo = new THREE.SphereGeometry(3, 8, 8);
+       const staffGemMat = new THREE.MeshBasicMaterial({ color: colorVal });
+       this.staffGem = new THREE.Mesh(staffGemGeo, staffGemMat);
+       this.staffGem.position.y = 17;
+       this.staffGroup.add(this.staffGem);
+       
+       this.rightArm.add(this.staffGroup);
+     }
 
     this.meshGroup.position.set(this.x, 0, this.y);
     window.scene3D.add(this.meshGroup);

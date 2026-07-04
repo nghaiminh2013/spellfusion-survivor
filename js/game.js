@@ -271,6 +271,42 @@ function initGame() {
   gameCtx.lastCaveEntranceX = 0;
   gameCtx.lastCaveEntranceY = 0;
 
+  // Khởi tạo 35 cây rừng trong 2 phân vùng (Tây Bắc & Đông Nam)
+  for (let i = 0; i < 35; i++) {
+    const zone = Math.random() < 0.5 ? 'top_left' : 'bottom_right';
+    let tx, ty;
+    if (zone === 'top_left') {
+      tx = 300 + Math.random() * 600;
+      ty = 300 + Math.random() * 600;
+    } else {
+      tx = 1600 + Math.random() * 600;
+      ty = 1600 + Math.random() * 600;
+    }
+    const check = canPlaceStructureAt(tx, ty, 20);
+    if (check.valid) {
+      gameCtx.obstacles.push(new Obstacle(tx, ty, 'tree'));
+    }
+  }
+
+  // Khởi tạo 24 thảo dược (Đỏ, Lam, Vàng) trên bản đồ chính
+  const herbTypes = ['herb_red', 'herb_blue', 'herb_yellow'];
+  for (let i = 0; i < 24; i++) {
+    const zone = Math.random() < 0.5 ? 'top_left' : 'bottom_right';
+    let hx, hy;
+    if (zone === 'top_left') {
+      hx = 300 + Math.random() * 600;
+      hy = 300 + Math.random() * 600;
+    } else {
+      hx = 1600 + Math.random() * 600;
+      hy = 1600 + Math.random() * 600;
+    }
+    const check = canPlaceStructureAt(hx, hy, 12);
+    if (check.valid) {
+      const htype = herbTypes[Math.floor(Math.random() * herbTypes.length)];
+      gameCtx.obstacles.push(new Obstacle(hx, hy, htype));
+    }
+  }
+
   // Spawn 3 Cave Entrances in the main map with index assignment (40% chance each, guaranteed at least 1)
   let spawnedIndices = [];
   for (let i = 0; i < 3; i++) {
@@ -326,6 +362,20 @@ function initGame() {
       gameCtx.obstacles.push(new Obstacle(ox, oy, type));
     }
   }
+  for (let i = 0; i < 6; i++) {
+    const ox = 5120 + Math.random() * 760;
+    const oy = 5120 + Math.random() * 760;
+    if (Math.hypot(ox - 5500, oy - 5500) > 90) {
+      gameCtx.obstacles.push(new Obstacle(ox, oy, 'stalactite'));
+    }
+  }
+  for (let i = 0; i < 4; i++) {
+    const ox = 5120 + Math.random() * 760;
+    const oy = 5120 + Math.random() * 760;
+    if (Math.hypot(ox - 5500, oy - 5500) > 90) {
+      gameCtx.obstacles.push(new Obstacle(ox, oy, 'cave_torch'));
+    }
+  }
 
   // Cave 1 (X: 6500-7500) - Pyrite Iron Cave: Mostly Iron
   for (let i = 0; i < 12; i++) {
@@ -335,6 +385,20 @@ function initGame() {
       const r = Math.random();
       const type = r < 0.25 ? 'ore_stone' : r < 0.75 ? 'ore_iron' : r < 0.93 ? 'ore_gold' : 'ore_diamond';
       gameCtx.obstacles.push(new Obstacle(ox, oy, type));
+    }
+  }
+  for (let i = 0; i < 6; i++) {
+    const ox = 6620 + Math.random() * 760;
+    const oy = 5120 + Math.random() * 760;
+    if (Math.hypot(ox - 7000, oy - 5500) > 90) {
+      gameCtx.obstacles.push(new Obstacle(ox, oy, 'stalactite'));
+    }
+  }
+  for (let i = 0; i < 4; i++) {
+    const ox = 6620 + Math.random() * 760;
+    const oy = 5120 + Math.random() * 760;
+    if (Math.hypot(ox - 7000, oy - 5500) > 90) {
+      gameCtx.obstacles.push(new Obstacle(ox, oy, 'cave_torch'));
     }
   }
 
@@ -350,6 +414,20 @@ function initGame() {
       ore.hp = ore.maxHp;
       ore.rich = true; // flag for double drop
       gameCtx.obstacles.push(ore);
+    }
+  }
+  for (let i = 0; i < 6; i++) {
+    const ox = 8120 + Math.random() * 760;
+    const oy = 5120 + Math.random() * 760;
+    if (Math.hypot(ox - 8500, oy - 5500) > 90) {
+      gameCtx.obstacles.push(new Obstacle(ox, oy, 'stalactite'));
+    }
+  }
+  for (let i = 0; i < 4; i++) {
+    const ox = 8120 + Math.random() * 760;
+    const oy = 5120 + Math.random() * 760;
+    if (Math.hypot(ox - 8500, oy - 5500) > 90) {
+      gameCtx.obstacles.push(new Obstacle(ox, oy, 'cave_torch'));
     }
   }
 
@@ -701,6 +779,19 @@ function enterLobby() {
   if (typeof updateGameHUD === 'function') updateGameHUD();
 
   canvas.style.cursor = 'none';
+
+  // Tự động hiển thị bảng hướng dẫn cho người chơi mới đăng ký / đăng nhập lần đầu
+  if (currentSaveData && !currentSaveData.tutorialShown) {
+    currentSaveData.tutorialShown = true;
+    if (typeof saveAccountSave === 'function') {
+      saveAccountSave();
+    }
+    setTimeout(() => {
+      if (window.LobbyTutorial && typeof window.LobbyTutorial.open === 'function') {
+        window.LobbyTutorial.open();
+      }
+    }, 1200);
+  }
 }
 
 function updateLobby() {
@@ -1408,10 +1499,10 @@ function update() {
     }
   }
 
-  // Power Drill tool effect: auto mine nearby ores
+  // Power Drill tool effect: auto mine nearby ores and trees
   if (gameCtx.player.equippedTool === 'power_drill' && gameCtx.gameTime % 15 === 0 && gameCtx.obstacles) {
     for (const obs of gameCtx.obstacles) {
-      if (!obs.active || !['ore_stone', 'ore_iron', 'ore_gold', 'ore_diamond'].includes(obs.type)) continue;
+      if (!obs.active || !['ore_stone', 'ore_iron', 'ore_gold', 'ore_diamond', 'tree'].includes(obs.type)) continue;
       const dist = Math.hypot(gameCtx.player.x - obs.x, gameCtx.player.y - obs.y);
       if (dist < 90) {
         obs.takeDamage(60);
@@ -1446,11 +1537,11 @@ function update() {
     const s = gameCtx.playerSpells[i];
     s.update(gameCtx.enemies, ARENA_WIDTH, ARENA_HEIGHT);
     
-    // Check collision between spell and mineral ores
+    // Check collision between spell and mineral ores / trees
     if (s.active && gameCtx.obstacles) {
       s.hitObstacles = s.hitObstacles || new Set();
       for (const obs of gameCtx.obstacles) {
-        if (!obs.active || !['ore_stone', 'ore_iron', 'ore_gold', 'ore_diamond'].includes(obs.type)) continue;
+        if (!obs.active || !['ore_stone', 'ore_iron', 'ore_gold', 'ore_diamond', 'tree'].includes(obs.type)) continue;
         
         if (s.hitObstacles.has(obs)) continue;
         
@@ -1604,10 +1695,10 @@ function update() {
   updateWaveControlPanel();
 
   if (gameCtx.inCave) {
-    // 1. Dọn dẹp quặng ở quá xa (> 1200px) để tránh rác bộ nhớ
+    // 1. Dọn dẹp vật thể ở quá xa (> 1200px) để tránh rác bộ nhớ
     for (let i = gameCtx.obstacles.length - 1; i >= 0; i--) {
       const obs = gameCtx.obstacles[i];
-      if (['ore_stone', 'ore_iron', 'ore_gold', 'ore_diamond', 'rock_pillar'].includes(obs.type)) {
+      if (['ore_stone', 'ore_iron', 'ore_gold', 'ore_diamond', 'rock_pillar', 'stalactite', 'cave_torch'].includes(obs.type)) {
         const dist = Math.hypot(obs.x - gameCtx.player.x, obs.y - gameCtx.player.y);
         if (dist > 1200) {
           obs.active = false;
@@ -1657,6 +1748,28 @@ function update() {
       gameCtx.obstacles.push(new Obstacle(ox, oy, 'rock_pillar'));
     }
 
+    // 3b. Tự động tái tạo thạch nhũ stalactites (tối đa 6 thạch nhũ)
+    const localStalactites = gameCtx.obstacles.filter(obs => obs.active && obs.type === 'stalactite');
+    if (localStalactites.length < 6) {
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 300 + Math.random() * 500;
+      const ox = gameCtx.player.x + Math.cos(angle) * dist;
+      const oy = gameCtx.player.y + Math.sin(angle) * dist;
+      
+      gameCtx.obstacles.push(new Obstacle(ox, oy, 'stalactite'));
+    }
+
+    // 3c. Tự động tái tạo đuốc phát sáng (tối đa 4 đuốc)
+    const localTorches = gameCtx.obstacles.filter(obs => obs.active && obs.type === 'cave_torch');
+    if (localTorches.length < 4) {
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 300 + Math.random() * 500;
+      const ox = gameCtx.player.x + Math.cos(angle) * dist;
+      const oy = gameCtx.player.y + Math.sin(angle) * dist;
+      
+      gameCtx.obstacles.push(new Obstacle(ox, oy, 'cave_torch'));
+    }
+
     // 4. Dọn dẹp quái vật hang động ở quá xa (> 1200px)
     for (let i = gameCtx.enemies.length - 1; i >= 0; i--) {
       const e = gameCtx.enemies[i];
@@ -1680,6 +1793,61 @@ function update() {
       
       gameCtx.enemies.push(new Enemy(ex, ey, type, gameCtx.waveDifficulty, gameCtx.currentMap));
     }
+  } else {
+    // Tự động tái tạo cây rừng trên bản đồ chính (duy trì tối thiểu 35 cây, hồi phục cực nhanh)
+    const localTrees = gameCtx.obstacles.filter(obs => obs.active && obs.type === 'tree');
+    let treesNeeded = 35 - localTrees.length;
+    if (treesNeeded > 0) {
+      let spawnedThisFrame = 0;
+      for (let attempt = 0; attempt < 25 && spawnedThisFrame < Math.min(3, treesNeeded); attempt++) {
+        const zone = Math.random() < 0.5 ? 'top_left' : 'bottom_right';
+        let tx, ty;
+        if (zone === 'top_left') {
+          tx = 300 + Math.random() * 600;
+          ty = 300 + Math.random() * 600;
+        } else {
+          tx = 1600 + Math.random() * 600;
+          ty = 1600 + Math.random() * 600;
+        }
+
+        const distToPlayer = Math.hypot(tx - gameCtx.player.x, ty - gameCtx.player.y);
+        if (distToPlayer > 120) {
+          const check = canPlaceStructureAt(tx, ty, 15); // giảm nhẹ bán kính va chạm để dễ mọc cây cạnh nhau
+          if (check.valid) {
+            gameCtx.obstacles.push(new Obstacle(tx, ty, 'tree'));
+            spawnedThisFrame++;
+          }
+        }
+      }
+    }
+
+    // Tự động tái tạo thảo dược trên bản đồ chính (duy trì tối thiểu 18 cây thảo dược)
+    const localHerbs = gameCtx.obstacles.filter(obs => obs.active && ['herb_red', 'herb_blue', 'herb_yellow'].includes(obs.type));
+    let herbsNeeded = 18 - localHerbs.length;
+    if (herbsNeeded > 0) {
+      let spawnedThisFrame = 0;
+      for (let attempt = 0; attempt < 15 && spawnedThisFrame < Math.min(2, herbsNeeded); attempt++) {
+        const zone = Math.random() < 0.5 ? 'top_left' : 'bottom_right';
+        let hx, hy;
+        if (zone === 'top_left') {
+          hx = 300 + Math.random() * 600;
+          hy = 300 + Math.random() * 600;
+        } else {
+          hx = 1600 + Math.random() * 600;
+          hy = 1600 + Math.random() * 600;
+        }
+
+        const distToPlayer = Math.hypot(hx - gameCtx.player.x, hy - gameCtx.player.y);
+        if (distToPlayer > 120) {
+          const check = canPlaceStructureAt(hx, hy, 10);
+          if (check.valid) {
+            const htype = ['herb_red', 'herb_blue', 'herb_yellow'][Math.floor(Math.random() * 3)];
+            gameCtx.obstacles.push(new Obstacle(hx, hy, htype));
+            spawnedThisFrame++;
+          }
+        }
+      }
+    }
   }
 
   if (gameCtx.inCave) {
@@ -1701,11 +1869,62 @@ function draw() {
   ctx.translate(shake.x, shake.y);
 
   // Vẽ nền bản đồ
-  ctx.fillStyle = gameCtx.inCave ? '#030308' : (mapInfo.bgColor || '#050510');
+  if (gameCtx.inCave) {
+    // 2D Vignette radial gradient cave background
+    const bgGrad = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, 50, canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) * 0.7);
+    bgGrad.addColorStop(0, '#0a0a14'); // Slightly brighter cave center
+    bgGrad.addColorStop(0.6, '#040409');
+    bgGrad.addColorStop(1, '#000000'); // Edge darkness
+    ctx.fillStyle = bgGrad;
+  } else {
+    ctx.fillStyle = mapInfo.bgColor || '#050510';
+  }
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.save();
   ctx.translate(-camX, -camY);
+
+  // Initialize and Draw Cave Background Floating Particles
+  if (gameCtx.inCave && gameCtx.player) {
+    if (!gameCtx.caveParticles) gameCtx.caveParticles = [];
+    while (gameCtx.caveParticles.length < 50) {
+      gameCtx.caveParticles.push({
+        x: gameCtx.player.x + (Math.random() - 0.5) * canvas.width * 1.5,
+        y: gameCtx.player.y + (Math.random() - 0.5) * canvas.height * 1.5,
+        size: Math.random() * 2.2 + 0.8,
+        alpha: Math.random() * 0.45 + 0.15,
+        speedX: (Math.random() - 0.5) * 0.4,
+        speedY: -0.25 - Math.random() * 0.4,
+        pulseSpeed: 0.015 + Math.random() * 0.02,
+        pulseOffset: Math.random() * Math.PI * 2
+      });
+    }
+
+    ctx.save();
+    const caveColors = ['#00f3ff', '#9d00ff', '#ffe600'];
+    const pColor = caveColors[gameCtx.currentCaveIndex] || '#00f3ff';
+    ctx.fillStyle = pColor;
+    
+    for (const p of gameCtx.caveParticles) {
+      p.x += p.speedX;
+      p.y += p.speedY;
+      
+      const dist = Math.hypot(p.x - gameCtx.player.x, p.y - gameCtx.player.y);
+      if (dist > 1000) {
+        const angle = Math.random() * Math.PI * 2;
+        const spawnDist = 600 + Math.random() * 300;
+        p.x = gameCtx.player.x + Math.cos(angle) * spawnDist;
+        p.y = gameCtx.player.y + Math.sin(angle) * spawnDist;
+      }
+      
+      const pulseAlpha = p.alpha * (0.6 + Math.sin(Date.now() * p.pulseSpeed + p.pulseOffset) * 0.4);
+      ctx.globalAlpha = pulseAlpha;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
 
   // Vẽ lưới bản đồ (Neon Grid)
   ctx.strokeStyle = 'rgba(0, 243, 255, 0.07)';
@@ -1732,10 +1951,9 @@ function draw() {
     const veinColors = ['#00f3ff', '#9d00ff', '#ffe600'];
     const veinColor = veinColors[gameCtx.currentCaveIndex] || '#00f3ff';
     ctx.strokeStyle = veinColor;
-    ctx.shadowColor = veinColor;
-    ctx.shadowBlur = 8;
-    ctx.globalAlpha = 0.22;
-    ctx.lineWidth = 1.8;
+    // Breathing pulsed opacity
+    ctx.globalAlpha = 0.16 + Math.sin(Date.now() * 0.002) * 0.08;
+    ctx.lineWidth = 2.0;
     
     const gridSz = 200;
     const startGX = Math.floor((gameCtx.player.x - 700) / gridSz) * gridSz;
@@ -1841,6 +2059,75 @@ function draw() {
   // Vẽ hiệu ứng hạt
   particleManager.draw(ctx);
 
+  const enableDarkMask = false;
+  if (gameCtx.inCave && enableDarkMask) {
+    ctx.save();
+    // Vẽ mặt nạ tối che khuất khu vực nhìn thấy của hang động
+    ctx.fillStyle = 'rgba(4, 4, 10, 0.88)';
+    ctx.fillRect(camX - 50, camY - 50, canvas.width + 100, canvas.height + 100);
+    
+    // Sử dụng destination-out để cắt các lỗ sáng hình tròn
+    ctx.globalCompositeOperation = 'destination-out';
+    
+    // 1. Vùng sáng của người chơi
+    if (gameCtx.player) {
+      const p = gameCtx.player;
+      const rad = 185 + Math.sin(Date.now() * 0.005) * 8;
+      const grad = ctx.createRadialGradient(p.x, p.y, 20, p.x, p.y, rad);
+      grad.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
+      grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.55)');
+      grad.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, rad, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    // 2. Vùng sáng từ Đuốc và Quặng phát sáng
+    for (const obs of gameCtx.obstacles) {
+      if (!obs.active) continue;
+      if (obs.x < camX - 100 || obs.x > camX + canvas.width + 100 || obs.y < camY - 100 || obs.y > camY + canvas.height + 100) continue;
+      
+      let rad = 0;
+      let intensity = 1.0;
+      if (obs.type === 'cave_torch') {
+        rad = 115 + Math.sin(Date.now() * 0.025 + obs.x) * 12;
+      } else if (['ore_stone', 'ore_iron', 'ore_gold', 'ore_diamond'].includes(obs.type)) {
+        rad = 60;
+        intensity = 0.55;
+      } else if (obs.type === 'auto_miner') {
+        rad = 95 + Math.sin(Date.now() * 0.01) * 6;
+        intensity = 0.85;
+      }
+      
+      if (rad > 0) {
+        const grad = ctx.createRadialGradient(obs.x, obs.y, 5, obs.x, obs.y, rad);
+        grad.addColorStop(0, `rgba(255, 255, 255, ${intensity})`);
+        grad.addColorStop(0.4, `rgba(255, 255, 255, ${intensity * 0.4})`);
+        grad.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(obs.x, obs.y, rad, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // 3. Vùng sáng từ cổng ra
+    for (const exit of gameCtx.caveExits) {
+      if (exit.x < camX - 150 || exit.x > camX + canvas.width + 150 || exit.y < camY - 150 || exit.y > camY + canvas.height + 150) continue;
+      const rad = 135;
+      const grad = ctx.createRadialGradient(exit.x, exit.y, 20, exit.x, exit.y, rad);
+      grad.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+      grad.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(exit.x, exit.y, rad, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
   ctx.restore(); // Kết thúc camera translate
 
   // Vẽ mũi tên chỉ hướng về giếng trời cổng ra khi ở trong hang động
@@ -1892,46 +2179,55 @@ function draw() {
     ctx.restore();
   }
 
-  // Vẽ preview công trình tại vị trí chuột
-  if (gameCtx.gameState === 'PLAYING') {
-    const overlay = document.getElementById('crafting-overlay');
-    if (overlay && overlay.style.display !== 'none') {
-      const selectedItem = overlay.querySelector('.craft-item.selected');
-      if (selectedItem) {
-        const type = selectedItem.getAttribute('data-type');
-        let previewSize = 16;
-        let previewColor = 'rgba(0, 243, 255, 0.5)';
-        if (type === 'barricade') { previewSize = 18; previewColor = 'rgba(0, 255, 127, 0.5)'; }
-        else if (type === 'stonewall') { previewSize = 22; previewColor = 'rgba(135, 206, 250, 0.5)'; }
-        else if (type === 'ironwall') { previewSize = 24; previewColor = 'rgba(218, 112, 214, 0.5)'; }
-        else if (type === 'campfire') { previewSize = 16; previewColor = 'rgba(255, 69, 0, 0.5)'; }
-        else if (type === 'spiketrap') { previewSize = 20; previewColor = 'rgba(255, 230, 0, 0.5)'; }
-        else if (type === 'turret') { previewSize = 16; previewColor = 'rgba(0, 243, 255, 0.5)'; }
-        
-        let isPlaceable = true;
-        if (typeof window.canPlaceStructureAt === 'function') {
-          isPlaceable = window.canPlaceStructureAt(mouse.x, mouse.y, previewSize).valid;
-        }
-        if (!isPlaceable) {
-          previewColor = 'rgba(255, 0, 85, 0.65)';
-        }
-        
-        ctx.save();
-        const mx = mouse.x - camX;
-        const my = mouse.y - camY;
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = previewColor;
-        ctx.fillStyle = previewColor;
-        ctx.strokeStyle = previewColor;
-        ctx.lineWidth = 1.5;
-        
-        ctx.beginPath();
-        ctx.arc(mx, my, previewSize, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        ctx.restore();
-      }
+  // Vẽ preview công trình tại vị trí chuột khi ở Build Mode
+  if (gameCtx.gameState === 'PLAYING' && gameCtx.player && gameCtx.player.activeMode === 'build') {
+    const type = gameCtx.player.selectedBuildType;
+    let previewSize = 16;
+    let previewColor = 'rgba(0, 243, 255, 0.5)';
+    if (type === 'barricade') { previewSize = 18; previewColor = 'rgba(0, 255, 127, 0.5)'; }
+    else if (type === 'stonewall') { previewSize = 22; previewColor = 'rgba(135, 206, 250, 0.5)'; }
+    else if (type === 'ironwall') { previewSize = 24; previewColor = 'rgba(218, 112, 214, 0.5)'; }
+    else if (type === 'campfire') { previewSize = 16; previewColor = 'rgba(255, 69, 0, 0.5)'; }
+    else if (type === 'spiketrap') { previewSize = 20; previewColor = 'rgba(255, 230, 0, 0.5)'; }
+    else if (type === 'turret') { previewSize = 16; previewColor = 'rgba(0, 243, 255, 0.5)'; }
+    else if (type === 'flame_turret') { previewSize = 16; previewColor = 'rgba(255, 69, 0, 0.5)'; }
+    else if (type === 'tesla_turret') { previewSize = 16; previewColor = 'rgba(204, 0, 255, 0.5)'; }
+    else if (type === 'electric_fence') { previewSize = 20; previewColor = 'rgba(0, 255, 255, 0.5)'; }
+    else if (type === 'elemental_bomb') { previewSize = 15; previewColor = 'rgba(255, 0, 255, 0.5)'; }
+    else if (type === 'auto_miner') { previewSize = 20; previewColor = 'rgba(0, 243, 255, 0.5)'; }
+    else if (type === 'alchemy_table') { previewSize = 20; previewColor = 'rgba(204, 51, 255, 0.5)'; }
+    
+    let isPlaceable = true;
+    if (typeof window.canPlaceStructureAt === 'function') {
+      isPlaceable = window.canPlaceStructureAt(mouse.x, mouse.y, previewSize).valid;
     }
+    if (!isPlaceable) {
+      previewColor = 'rgba(255, 0, 85, 0.65)';
+    }
+    
+    ctx.save();
+    const mx = mouse.x - camX;
+    const my = mouse.y - camY;
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = previewColor;
+    
+    ctx.strokeStyle = previewColor;
+    ctx.lineWidth = 2;
+    ctx.fillStyle = previewColor.replace('0.5', '0.15').replace('0.65', '0.2');
+    
+    ctx.beginPath();
+    ctx.arc(mx, my, previewSize, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    
+    // Draw placement range (circle around player showing build range, say 250px)
+    ctx.strokeStyle = 'rgba(0, 243, 255, 0.08)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.arc(gameCtx.player.x - camX, gameCtx.player.y - camY, 250, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
   }
 
   ctx.restore(); // Kết thúc screen shake

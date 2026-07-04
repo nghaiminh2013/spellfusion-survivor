@@ -671,15 +671,15 @@ class Spell {
       case 'basic_wolf':
         this.speed = 9;
         this.size = 20;
-        this.damage = 65;
+        this.damage = 90; // Tăng damage từ 65 lên 90
         this.maxLife = 16;
         this.color = '#ff003c';
         this.isPierceAll = true;
         break;
       case 'claw_melee':
         this.speed = 10;
-        this.size = 42;
-        this.damage = 135;
+        this.size = 60; // Tăng size từ 42 lên 60 để cào rộng hơn
+        this.damage = 180; // Tăng damage từ 135 lên 180
         this.maxLife = 12;
         this.color = '#ff3300';
         this.isPierceAll = true;
@@ -689,7 +689,7 @@ class Spell {
           const lvl = this.player.spellLevels[0] || 1;
           this.speed = 5;
           this.size = 10;
-          this.damage = 60 * (1.0 + (lvl - 1) * 0.15);
+          this.damage = 85 * (1.0 + (lvl - 1) * 0.15); // Tăng damage từ 60 lên 85
           this.maxLife = 900;
           this.color = lvl >= 5 ? '#ff3300' : '#a9a9a9';
           this.attackCooldown = 0;
@@ -700,8 +700,8 @@ class Spell {
           const lvl = this.player.spellLevels[1] || 1;
           this.speed = 0;
           this.size = 10;
-          this.maxRadius = 160 * (1.0 + (lvl - 1) * 0.20);
-          this.damage = 200 * (1.0 + (lvl - 1) * 0.15);
+          this.maxRadius = 300 * (1.0 + (lvl - 1) * 0.20); // Tăng maxRadius từ 160 lên 300 (siêu rộng)
+          this.damage = 320 * (1.0 + (lvl - 1) * 0.15); // Tăng damage từ 200 lên 320
           this.maxLife = 20;
           this.color = 'rgba(255, 0, 60, 0.15)';
         }
@@ -711,7 +711,7 @@ class Spell {
           const lvl = this.player.spellLevels[2] || 1;
           this.speed = 15;
           this.size = 35;
-          this.damage = 450 * (1.0 + (lvl - 1) * 0.25);
+          this.damage = 650 * (1.0 + (lvl - 1) * 0.25); // Tăng damage từ 450 lên 650
           this.maxLife = 40;
           this.color = '#ff003c';
         }
@@ -821,7 +821,7 @@ class Spell {
       case 'basic_gaia':
         this.speed = 7.5;
         this.size = 11;
-        this.damage = 32;
+        this.damage = 45; // Tăng từ 32 lên 45
         this.maxLife = 55;
         this.color = '#8b5a2b';
         break;
@@ -830,7 +830,7 @@ class Spell {
           const lvl = this.player.spellLevels[0] || 1;
           this.speed = 10;
           this.size = 15;
-          this.damage = 130 * (1.0 + (lvl - 1) * 0.20);
+          this.damage = 180 * (1.0 + (lvl - 1) * 0.20); // Tăng từ 130 lên 180
           this.maxLife = 40;
           this.color = '#8b5a2b';
           this.isPierceAll = true;
@@ -841,7 +841,7 @@ class Spell {
           const lvl = this.player.spellLevels[1] || 1;
           this.speed = 0;
           this.size = 100 * (1.0 + (lvl - 1) * 0.10);
-          this.damage = 12 * (1.0 + (lvl - 1) * 0.20);
+          this.damage = 20 * (1.0 + (lvl - 1) * 0.20); // Tăng từ 12 lên 20
           this.maxLife = 180 + (lvl - 1) * 30;
           this.color = '#228b22';
         }
@@ -851,9 +851,50 @@ class Spell {
           const lvl = this.player.spellLevels[3] || 1;
           this.speed = 0;
           this.size = 200 * (1.0 + (lvl - 1) * 0.10);
-          this.damage = 18 * (1.0 + (lvl - 1) * 0.20);
-          this.maxLife = 300 + (lvl - 1) * 60;
+          this.damage = 35 * (1.0 + (lvl - 1) * 0.20); // Tăng từ 18 lên 35
+          this.maxLife = 420 + (lvl - 1) * 60; // Tăng từ 300 lên 420 (7s)
           this.color = 'rgba(139, 90, 43, 0.15)';
+        }
+        break;
+
+      // Chronos (Thời Không Pháp Sư) Spells
+      case 'basic_chronos':
+        this.speed = 10;
+        this.size = 5.5;
+        this.damage = 25;
+        this.maxLife = 40;
+        this.color = '#00f3ff';
+        break;
+      case 'chronos_z':
+        {
+          const lvl = this.player.spellLevels[0] || 1;
+          this.speed = 8;
+          this.size = 12;
+          this.damage = 150 * (1.0 + (lvl - 1) * 0.20);
+          this.maxLife = 90;
+          this.explodeTimer = 72; // Nổ sau 1.2 giây (72 frames ở 60fps)
+          this.color = '#ffe600';
+        }
+        break;
+      case 'chronos_x':
+        {
+          const lvl = this.player.spellLevels[1] || 1;
+          this.speed = 0;
+          this.size = 110 * (1.0 + (lvl - 1) * 0.10);
+          this.damage = 15 * (1.0 + (lvl - 1) * 0.20);
+          this.maxLife = 260;
+          this.color = 'rgba(0, 243, 255, 0.12)';
+        }
+        break;
+      case 'chronos_c':
+        {
+          const lvl = this.player.spellLevels[2] || 1;
+          this.speed = 0;
+          this.size = 10;
+          this.maxRadius = 180 * (1.0 + (lvl - 1) * 0.15);
+          this.damage = 480 * (1.0 + (lvl - 1) * 0.25);
+          this.maxLife = 90;
+          this.color = '#ff3366';
         }
         break;
 
@@ -861,7 +902,7 @@ class Spell {
       case 'basic_umbra':
         this.speed = 8.5;
         this.size = 6.0;
-        this.damage = 22;
+        this.damage = 32; // Tăng từ 22 lên 32
         this.maxLife = 65;
         this.color = '#9d00ff';
         break;
@@ -870,7 +911,7 @@ class Spell {
           const lvl = this.player.spellLevels[0] || 1;
           this.speed = 10;
           this.size = 9;
-          this.damage = 85 * (1.0 + (lvl - 1) * 0.20);
+          this.damage = 120 * (1.0 + (lvl - 1) * 0.20); // Tăng từ 85 lên 120
           this.maxLife = 50;
           this.color = '#4b0082';
           this.isPierceAll = true;
@@ -881,7 +922,7 @@ class Spell {
           const lvl = this.player.spellLevels[1] || 1;
           this.speed = 0;
           this.size = 110 * (1.0 + (lvl - 1) * 0.10);
-          this.damage = 12 * (1.0 + (lvl - 1) * 0.20);
+          this.damage = 22 * (1.0 + (lvl - 1) * 0.20); // Tăng từ 12 lên 22
           this.maxLife = 240;
           this.color = 'rgba(75, 0, 130, 0.12)';
         }
@@ -891,7 +932,7 @@ class Spell {
           const lvl = this.player.spellLevels[2] || 1;
           this.speed = 0;
           this.size = 150 * (1.0 + (lvl - 1) * 0.10);
-          this.damage = 16 * (1.0 + (lvl - 1) * 0.20);
+          this.damage = 26 * (1.0 + (lvl - 1) * 0.20); // Tăng từ 16 lên 26
           this.maxLife = 300 + (lvl - 1) * 90;
           this.color = 'rgba(157, 0, 255, 0.1)';
         }
@@ -908,7 +949,7 @@ class Spell {
       case 'basic_venom':
         this.speed = 10;
         this.size = 5.5;
-        this.damage = 11;
+        this.damage = 22; // Tăng từ 11 lên 22
         this.maxLife = 40;
         this.color = '#32cd32';
         break;
@@ -918,7 +959,7 @@ class Spell {
           const dmgMult = 1.0 + (lvl - 1) * 0.15;
           this.speed = 11;
           this.size = 7;
-          this.damage = 45 * dmgMult;
+          this.damage = 70 * dmgMult; // Tăng từ 45 lên 70
           this.maxLife = 45;
           this.color = '#00ff00';
           this.isExplosive = true;
@@ -929,7 +970,7 @@ class Spell {
           const lvl = this.player.spellLevels[1] || 1;
           this.speed = 8.5;
           this.size = 8;
-          this.damage = 15;
+          this.damage = 28; // Tăng từ 15 lên 28
           this.maxLife = 50;
           this.color = '#228b22';
           this.isExplosive = true;
@@ -941,7 +982,7 @@ class Spell {
           const dmgMult = 1.0 + (lvl - 1) * 0.10;
           this.speed = 4.5;
           this.size = 12;
-          this.damage = 50 * dmgMult;
+          this.damage = 80 * dmgMult; // Tăng từ 50 lên 80
           this.maxLife = 120;
           this.color = '#7fff00';
           this.path = [];
@@ -954,7 +995,7 @@ class Spell {
           const sizeMult = 1.0 + (lvl - 1) * 0.20;
           this.speed = 0;
           this.size = 100 * sizeMult;
-          this.damage = 16;
+          this.damage = 30; // Tăng từ 16 lên 30
           this.maxLife = 360;
           this.color = 'rgba(0, 250, 154, 0.08)';
           this.cloudTick = 0;
@@ -1001,7 +1042,7 @@ class Spell {
     // Áp dụng gia tăng chỉ số theo cấp độ phép thuật (Z, X, C, V)
     const spellIdx = this.player.spells.indexOf(this.type);
     if (spellIdx !== -1) {
-      const isCustomSpell = this.type.startsWith('ignis_') || this.type.startsWith('marina_') || this.type.startsWith('zephyr_') || this.type.startsWith('tesla_') || this.type.startsWith('gaia_') || this.type.startsWith('umbra_') || this.type.startsWith('venom_');
+      const isCustomSpell = this.type.startsWith('ignis_') || this.type.startsWith('marina_') || this.type.startsWith('zephyr_') || this.type.startsWith('tesla_') || this.type.startsWith('gaia_') || this.type.startsWith('umbra_') || this.type.startsWith('venom_') || this.type.startsWith('chronos_');
       if (!isCustomSpell) {
         const spellLvl = this.player.spellLevels[spellIdx] || 1;
         const lvlMultiplier = 1.0 + (spellLvl - 1) * 0.20; // +20% sát thương mỗi cấp trên 1
@@ -1760,8 +1801,8 @@ class Spell {
           target = e;
         }
       }
-      const speed = 4.8;
-      if (target && minDist < 280) {
+      const speed = 6.5;
+      if (target && minDist < 360) {
         const dx = target.x - this.x;
         const dy = target.y - this.y;
         this.vx = dx / minDist;
@@ -1774,7 +1815,7 @@ class Spell {
             let dmg = this.damage;
             if (Math.random() < (this.player.critChance || 0)) dmg *= 2;
             target.takeDamage(dmg);
-            this.player.gainRage(2.5); // Đệ sói cắn hồi nộ cho Lycan (tăng lên 2.5)
+            this.player.gainRage(4.0); // Đệ sói cắn hồi nộ cho Lycan (tăng lên 4.0)
             
             const lvl = this.player.spellLevels[0] || 1;
             if (lvl >= 5) {
@@ -1787,7 +1828,7 @@ class Spell {
             }
             
             soundManager.playHit();
-            this.attackCooldown = 15; // Hồi chiêu cắn 15 frame (~0.25s)
+            this.attackCooldown = 8; // Hồi chiêu cắn 8 frame (~0.13s)
           }
         }
       } else {
@@ -1831,8 +1872,8 @@ class Spell {
           if (Math.random() < (this.player.critChance || 0)) dmg *= 2;
           enemy.takeDamage(dmg);
           const pushAngle = Math.atan2(enemy.y - this.y, enemy.x - this.x);
-          enemy.x += Math.cos(pushAngle) * 110; // Đẩy quái cực xa
-          enemy.y += Math.sin(pushAngle) * 110;
+          enemy.x += Math.cos(pushAngle) * 150; // Đẩy quái cực xa (buffed!)
+          enemy.y += Math.sin(pushAngle) * 150;
           enemy.applyEffect('dizzy', 210); // Gây choáng 3.5s
           this.hitEnemies.add(enemy.id);
           particleManager.createWindParticles(enemy.x, enemy.y, 4);
@@ -1865,7 +1906,7 @@ class Spell {
       if (this.life >= this.maxLife - 1) {
         soundManager.playExplosion();
         particleManager.triggerShake(18);
-        const slamRadius = 160;
+        const slamRadius = 240; // Tăng từ 160 lên 240
         particleManager.createShockwave(this.destX, this.destY, '#ff003c', slamRadius);
         particleManager.createFireParticles(this.destX, this.destY, 15);
         this.player.x = this.destX;
@@ -1876,7 +1917,7 @@ class Spell {
           if (dist < slamRadius + enemy.size) {
             let dmg = this.damage;
             if (enemy.type === 'boss') {
-              dmg = enemy.hp * 0.60; // Rút thẳng 60% HP hiện tại của Boss
+              dmg = enemy.hp * 0.70; // Rút thẳng 70% HP hiện tại của Boss (buffed!)
             }
             enemy.takeDamage(dmg);
             particleManager.createExplosion(enemy.x, enemy.y, '#ff003c', 8, 4);
@@ -1923,11 +1964,13 @@ class Spell {
       this.x = this.player.x;
       this.y = this.player.y;
       this.player.lycanTransformActive = true;
-      this.player.lycanTransformTimer = this.maxLife - this.life;
-      this.player.rage = ((this.maxLife - this.life) / this.maxLife) * this.player.maxRage;
-      if (this.life >= this.maxLife - 1) {
+      this.player.rage = (this.player.wolfHp / this.player.maxWolfHp) * 100;
+      if (this.player.wolfHp <= 0) {
+        this.active = false;
         this.player.lycanTransformActive = false;
         this.player.rage = 0;
+      } else {
+        this.life = 0; // Giữ spell luôn hoạt động cho đến khi hết máu sói
       }
     }
     else if (this.type === 'creation_z') {
@@ -2601,7 +2644,7 @@ class Spell {
         if (gameCtx.obstacles) {
           for (const obs of gameCtx.obstacles) {
             if (!obs.active) continue;
-            if (obs.type !== 'ore_stone' && obs.type !== 'ore_iron') continue;
+            if (obs.type !== 'ore_stone' && obs.type !== 'ore_iron' && obs.type !== 'ore_gold' && obs.type !== 'ore_diamond' && obs.type !== 'tree') continue;
             
             const dist = Math.hypot(obs.x - this.x, obs.y - this.y);
             if (dist < obs.size + this.size) {
@@ -2799,14 +2842,14 @@ class Spell {
                 particleManager.addParticle(this.x, this.y, '#ffe600', 2, 0.8, Math.random()*Math.PI*2, 0.05);
               } else if (this.type === 'basic_wolf') {
                 particleManager.createExplosion(this.x, this.y, '#ff003c', 4, 2);
-                this.player.gainRage(1.5); // Tăng nộ khi cào trúng quái
+                this.player.gainRage(3.0); // Tăng nộ khi cào trúng quái (buffed!)
               } else if (this.type === 'claw_melee') {
                 particleManager.createExplosion(this.x, this.y, '#ff3300', 8, 3);
                 enemy.applyEffect('burn', 150); // Gây chảy máu 150 frames
                 
-                // Lifesteal 8% sát thương cận chiến khi hóa hình sói
-                const healAmt = dmg * 0.08;
-                this.player.hp = Math.min(this.player.maxHp, this.player.hp + healAmt);
+                // Lifesteal 15% sát thương cận chiến khi hóa hình sói (hồi trực tiếp vào máu sói!)
+                const healAmt = dmg * 0.15;
+                this.player.wolfHp = Math.min(this.player.maxWolfHp, this.player.wolfHp + healAmt);
                 if (Math.random() < 0.3) {
                   particleManager.addParticle(this.player.x, this.player.y, '#32cd32', 1.8, 1.2, -Math.PI / 2, 0.05);
                 }

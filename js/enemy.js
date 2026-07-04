@@ -91,8 +91,8 @@ class ResourcePickup {
     this.y = y;
     this.type = type; // 'wood', 'stone', 'iron', 'gold_ore', 'diamond_ore'
     this.amount = amount;
-    this.color = type === 'wood' ? '#00ff7f' : type === 'stone' ? '#87cefa' : type === 'iron' ? '#da70d6' : type === 'gold_ore' ? '#ffd700' : '#00ffff';
-    this.size = type === 'wood' ? 5 : type === 'stone' ? 5.5 : type === 'iron' ? 6 : type === 'gold_ore' ? 6 : 6.5;
+    this.color = type === 'wood' ? '#00ff7f' : type === 'stone' ? '#87cefa' : type === 'iron' ? '#da70d6' : type === 'gold_ore' ? '#ffd700' : type === 'diamond_ore' ? '#00ffff' : type === 'herb_red' ? '#ff3366' : type === 'herb_blue' ? '#3399ff' : '#ffe600';
+    this.size = type === 'wood' ? 5 : type === 'stone' ? 5.5 : type === 'iron' ? 6 : type === 'gold_ore' ? 6 : type === 'diamond_ore' ? 6.5 : 4.5;
     this.vx = (Math.random() * 2 - 1) * 1.5;
     this.vy = (Math.random() * 2 - 1) * 1.5;
     this.speed = 0;
@@ -133,6 +133,12 @@ class ResourcePickup {
         player.gold_ore = (player.gold_ore || 0) + this.amount;
       } else if (this.type === 'diamond_ore') {
         player.diamond_ore = (player.diamond_ore || 0) + this.amount;
+      } else if (this.type === 'herb_red') {
+        player.herb_red = (player.herb_red || 0) + this.amount;
+      } else if (this.type === 'herb_blue') {
+        player.herb_blue = (player.herb_blue || 0) + this.amount;
+      } else if (this.type === 'herb_yellow') {
+        player.herb_yellow = (player.herb_yellow || 0) + this.amount;
       }
       this.collected = true;
       soundManager.playOrbPickup(this.type === 'wood' ? 'wood' : this.type === 'stone' ? 'wind' : 'lightning');
@@ -143,6 +149,9 @@ class ResourcePickup {
       else if (this.type === 'iron') displayName = 'Sắt';
       else if (this.type === 'gold_ore') displayName = 'Vàng';
       else if (this.type === 'diamond_ore') displayName = 'K.Cương';
+      else if (this.type === 'herb_red') displayName = 'Thảo Dược Đỏ';
+      else if (this.type === 'herb_blue') displayName = 'Thảo Dược Lam';
+      else if (this.type === 'herb_yellow') displayName = 'Thảo Dược Vàng';
       
       if (window.FloatingText && gameCtx.floatingTexts) {
         gameCtx.floatingTexts.push(new FloatingText(this.x, this.y - 12, `+${this.amount} ${displayName}`, this.color));
@@ -492,10 +501,29 @@ class Obstacle {
     this.y = y;
     this.type = type;
     this.active = true;
-    this.isCrafted = !['ore_stone', 'ore_iron', 'rock_pillar', 'ore_gold', 'ore_diamond'].includes(type);
+    this.isCrafted = !['ore_stone', 'ore_iron', 'rock_pillar', 'ore_gold', 'ore_diamond', 'stalactite', 'cave_torch'].includes(type);
     
     // Default properties based on type
-    if (type === 'barricade') {
+    if (type === 'auto_miner') {
+      this.maxHp = 500;
+      this.hp = this.maxHp;
+      this.size = 20;
+      this.color = '#00f3ff';
+      this.solid = true;
+      this.mineTimer = 0;
+    } else if (type === 'stalactite') {
+      this.maxHp = 9999999;
+      this.hp = this.maxHp;
+      this.size = 14;
+      this.color = '#7896dc';
+      this.solid = true;
+    } else if (type === 'cave_torch') {
+      this.maxHp = 9999999;
+      this.hp = this.maxHp;
+      this.size = 10;
+      this.color = '#ffd700';
+      this.solid = true;
+    } else if (type === 'barricade') {
       this.maxHp = 150;
       this.hp = this.maxHp;
       this.size = 18;
@@ -599,6 +627,36 @@ class Obstacle {
       this.size = 15;
       this.color = '#ff00ff'; // Hồng neon
       this.solid = false;
+    } else if (type === 'tree') {
+      this.maxHp = 80;
+      this.hp = this.maxHp;
+      this.size = 20;
+      this.color = '#00ff7f'; // Xanh lá neon
+      this.solid = true;
+    } else if (type === 'herb_red') {
+      this.maxHp = 30;
+      this.hp = this.maxHp;
+      this.size = 12;
+      this.color = '#ff3366'; // Đỏ neon
+      this.solid = false;
+    } else if (type === 'herb_blue') {
+      this.maxHp = 30;
+      this.hp = this.maxHp;
+      this.size = 12;
+      this.color = '#3399ff'; // Xanh lam neon
+      this.solid = false;
+    } else if (type === 'herb_yellow') {
+      this.maxHp = 30;
+      this.hp = this.maxHp;
+      this.size = 12;
+      this.color = '#ffd700'; // Vàng neon
+      this.solid = false;
+    } else if (type === 'alchemy_table') {
+      this.maxHp = 300;
+      this.hp = this.maxHp;
+      this.size = 20;
+      this.color = '#cc33ff'; // Tím neon
+      this.solid = true;
     }
 
     if (window.scene3D) {
@@ -612,21 +670,23 @@ class Obstacle {
     
     // Check if mining
     const isOre = this.type === 'ore_stone' || this.type === 'ore_iron' || this.type === 'ore_gold' || this.type === 'ore_diamond';
-    if (isOre && isMonster) return; // Ores cannot take damage from monsters/enemy bullets!
+    const isTree = this.type === 'tree';
+    if ((isOre || isTree) && isMonster) return; // Ores and trees cannot take damage from monsters/enemy bullets!
     
-    if (window.gameCheats && window.gameCheats.oneHitKill && !isOre) {
+    if (window.gameCheats && window.gameCheats.oneHitKill && !isOre && !isTree) {
       amount = this.hp;
     }
     
     this.hp -= amount;
     
     if (isOre) {
-      // Drop resources on taking damage (e.g. 25% chance per hit)
-      if (Math.random() < 0.25) {
+      // Drop resources and XP gems on taking damage (e.g. 28% chance per hit)
+      if (Math.random() < 0.28) {
         let dropType = 'stone';
-        if (this.type === 'ore_iron') dropType = 'iron';
-        else if (this.type === 'ore_gold') dropType = 'gold_ore';
-        else if (this.type === 'ore_diamond') dropType = 'diamond_ore';
+        let xpVal = 1;
+        if (this.type === 'ore_iron') { dropType = 'iron'; xpVal = 2; }
+        else if (this.type === 'ore_gold') { dropType = 'gold_ore'; xpVal = 3; }
+        else if (this.type === 'ore_diamond') { dropType = 'diamond_ore'; xpVal = 5; }
 
         const amount = this.rich ? 2 : 1;
         gameCtx.resourcePickups.push(new ResourcePickup(
@@ -634,6 +694,36 @@ class Obstacle {
           this.y + (Math.random() * 20 - 10),
           dropType,
           amount
+        ));
+        
+        // Spawn an XP gem upon mining hit
+        gameCtx.xpGems.push(new XPGem(
+          this.x + (Math.random() * 20 - 10),
+          this.y + (Math.random() * 20 - 10),
+          xpVal
+        ));
+      }
+    } else if (isTree) {
+      if (Math.random() < 0.28) {
+        gameCtx.resourcePickups.push(new ResourcePickup(
+          this.x + (Math.random() * 20 - 10),
+          this.y + (Math.random() * 20 - 10),
+          'wood',
+          1
+        ));
+        gameCtx.xpGems.push(new XPGem(
+          this.x + (Math.random() * 20 - 10),
+          this.y + (Math.random() * 20 - 10),
+          1
+        ));
+      }
+    } else if (this.type === 'herb_red' || this.type === 'herb_blue' || this.type === 'herb_yellow') {
+      if (Math.random() < 0.35) {
+        gameCtx.resourcePickups.push(new ResourcePickup(
+          this.x + (Math.random() * 20 - 10),
+          this.y + (Math.random() * 20 - 10),
+          this.type,
+          1
         ));
       }
     }
@@ -650,9 +740,10 @@ class Obstacle {
       if (isOre) {
         // Drop lots of resources on destruction
         let dropType = 'stone';
-        if (this.type === 'ore_iron') dropType = 'iron';
-        else if (this.type === 'ore_gold') dropType = 'gold_ore';
-        else if (this.type === 'ore_diamond') dropType = 'diamond_ore';
+        let xpVal = 2;
+        if (this.type === 'ore_iron') { dropType = 'iron'; xpVal = 4; }
+        else if (this.type === 'ore_gold') { dropType = 'gold_ore'; xpVal = 7; }
+        else if (this.type === 'ore_diamond') { dropType = 'diamond_ore'; xpVal = 12; }
 
         const mult = this.rich ? 2 : 1;
         const count = (Math.floor(Math.random() * 3) + 3) * mult; // 3-5 drops * multiplier
@@ -662,6 +753,46 @@ class Obstacle {
             this.y + (Math.random() * 30 - 15),
             dropType,
             Math.floor(Math.random() * 2) + 1
+          ));
+        }
+
+        // Spawn a burst of XP Gems on destruction!
+        const xpCount = Math.floor(Math.random() * 2) + 2; // 2-3 gems
+        for (let i = 0; i < xpCount; i++) {
+          gameCtx.xpGems.push(new XPGem(
+            this.x + (Math.random() * 40 - 20),
+            this.y + (Math.random() * 40 - 20),
+            xpVal
+          ));
+        }
+      } else if (isTree) {
+        const count = Math.floor(Math.random() * 3) + 3; // 3-5 drops
+        for (let i = 0; i < count; i++) {
+          gameCtx.resourcePickups.push(new ResourcePickup(
+            this.x + (Math.random() * 30 - 15),
+            this.y + (Math.random() * 30 - 15),
+            'wood',
+            Math.floor(Math.random() * 2) + 1
+          ));
+        }
+
+        // Spawn a burst of XP Gems on tree destruction! (2-3 gems)
+        const xpCount = Math.floor(Math.random() * 2) + 2;
+        for (let i = 0; i < xpCount; i++) {
+          gameCtx.xpGems.push(new XPGem(
+            this.x + (Math.random() * 40 - 20),
+            this.y + (Math.random() * 40 - 20),
+            2 // 2 XP
+          ));
+        }
+      } else if (this.type === 'herb_red' || this.type === 'herb_blue' || this.type === 'herb_yellow') {
+        const count = Math.floor(Math.random() * 2) + 2; // 2-3 drops
+        for (let i = 0; i < count; i++) {
+          gameCtx.resourcePickups.push(new ResourcePickup(
+            this.x + (Math.random() * 30 - 15),
+            this.y + (Math.random() * 30 - 15),
+            this.type,
+            1
           ));
         }
       }
@@ -680,6 +811,55 @@ class Obstacle {
     if (!this.active) return;
 
     // Special behaviors
+    if (this.type === 'auto_miner') {
+      this.mineTimer = (this.mineTimer || 0) + 1;
+      
+      const p = gameCtx.player;
+      if (p) {
+        // Tốc độ khai thác chịu ảnh hưởng bởi nâng cấp Hiệu Suất Máy Đào (minerEfficiencyModifier)
+        const eff = p.minerEfficiencyModifier || 1.0;
+        const tickStone = Math.max(1, Math.round(6 / eff));
+        const tickIron = Math.max(1, Math.round(30 / eff));
+        const tickGold = Math.max(1, Math.round(60 / eff));
+        const tickDiamond = Math.max(1, Math.round(180 / eff));
+
+        // 0.1s: 1 Stone -> every tickStone frames
+        if (this.mineTimer % tickStone === 0) {
+          p.stone = (p.stone || 0) + 1;
+          if (Math.random() < 0.05) {
+            particleManager.addParticle(this.x, this.y, '#87cefa', 1, 1, Math.random() * Math.PI * 2, 0.08);
+          }
+        }
+        // 0.5s: 1 Iron -> every tickIron frames
+        if (this.mineTimer % tickIron === 0) {
+          p.iron = (p.iron || 0) + 1;
+          particleManager.addParticle(this.x, this.y - 10, '#da70d6', 1.8, 1, -Math.PI / 2, 0.05);
+          if (window.FloatingText && gameCtx.floatingTexts) {
+            gameCtx.floatingTexts.push(new FloatingText(this.x, this.y - 15, "+1 Sắt", "#da70d6"));
+          }
+        }
+        // 1.0s: 1 Gold -> every tickGold frames
+        if (this.mineTimer % tickGold === 0) {
+          p.gold_ore = (p.gold_ore || 0) + 1;
+          particleManager.addParticle(this.x, this.y - 10, '#ffd700', 2, 1, -Math.PI / 2, 0.04);
+          if (window.FloatingText && gameCtx.floatingTexts) {
+            gameCtx.floatingTexts.push(new FloatingText(this.x, this.y - 15, "+1 Vàng", "#ffd700"));
+          }
+        }
+        // 3.0s: 1 Diamond -> every tickDiamond frames
+        if (this.mineTimer % tickDiamond === 0) {
+          p.diamond_ore = (p.diamond_ore || 0) + 1;
+          particleManager.addParticle(this.x, this.y - 10, '#00ffff', 2.5, 1, -Math.PI / 2, 0.03);
+          if (window.FloatingText && gameCtx.floatingTexts) {
+            gameCtx.floatingTexts.push(new FloatingText(this.x, this.y - 15, "+1 Kim Cương", "#00ffff"));
+          }
+          if (soundManager.playSpell) {
+            soundManager.playSpell('water_water');
+          }
+        }
+      }
+    }
+
     if (this.type === 'campfire') {
       // Heal player
       const dx = gameCtx.player.x - this.x;
@@ -1059,14 +1239,75 @@ class Obstacle {
       ctx.fill();
       
       ctx.restore();
-    } else if (this.type === 'ore_stone' || this.type === 'ore_iron' || this.type === 'ore_gold' || this.type === 'ore_diamond') {
-      // Faceted crystal rock
-      let fillCol = 'rgba(135,206,250,0.2)'; // stone
-      if (this.type === 'ore_iron') fillCol = 'rgba(218,112,214,0.2)';
-      else if (this.type === 'ore_gold') fillCol = 'rgba(255,215,0,0.2)';
-      else if (this.type === 'ore_diamond') fillCol = 'rgba(0,255,255,0.2)';
+    } else if (this.type === 'tree') {
+      // Soft ground shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+      ctx.beginPath();
+      ctx.ellipse(this.x, this.y + this.size * 0.4, this.size * 0.9, this.size * 0.4, 0, 0, Math.PI * 2);
+      ctx.fill();
 
-      ctx.fillStyle = fillCol;
+      // Draw tree trunk
+      ctx.fillStyle = '#8b5a2b';
+      ctx.fillRect(this.x - 4, this.y - 4, 8, this.size * 0.9);
+
+      // Draw neon tree foliage
+      ctx.fillStyle = '#00d666';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y - 12, this.size * 0.85, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#00ff7f';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y - 22, this.size * 0.65, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(this.x - 3, this.y - 25, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (this.type === 'ore_stone' || this.type === 'ore_iron' || this.type === 'ore_gold' || this.type === 'ore_diamond') {
+      // Soft ground shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+      ctx.beginPath();
+      ctx.ellipse(this.x + 3, this.y + this.size * 0.4, this.size * 0.9, this.size * 0.4, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Determine crystal colors and gradients
+      let crystalColor = '#87cefa';
+      let strokeColor = '#00f3ff';
+      let fillGrad = ctx.createRadialGradient(this.x, this.y, 2, this.x, this.y, this.size);
+      
+      if (this.type === 'ore_stone') {
+        fillGrad.addColorStop(0, 'rgba(255, 255, 255, 0.65)');
+        fillGrad.addColorStop(0.5, 'rgba(135, 206, 250, 0.4)');
+        fillGrad.addColorStop(1, 'rgba(70, 130, 180, 0.7)');
+        crystalColor = '#87cefa';
+        strokeColor = '#4a90e2';
+      } else if (this.type === 'ore_iron') {
+        fillGrad.addColorStop(0, 'rgba(255, 255, 255, 0.7)');
+        fillGrad.addColorStop(0.5, 'rgba(218, 112, 214, 0.45)');
+        fillGrad.addColorStop(1, 'rgba(139, 0, 139, 0.75)');
+        crystalColor = '#da70d6';
+        strokeColor = '#cc00ff';
+      } else if (this.type === 'ore_gold') {
+        fillGrad.addColorStop(0, 'rgba(255, 255, 255, 0.75)');
+        fillGrad.addColorStop(0.5, 'rgba(255, 215, 0, 0.5)');
+        fillGrad.addColorStop(1, 'rgba(218, 165, 32, 0.8)');
+        crystalColor = '#ffd700';
+        strokeColor = '#ffa500';
+      } else if (this.type === 'ore_diamond') {
+        fillGrad.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
+        fillGrad.addColorStop(0.4, 'rgba(0, 255, 255, 0.6)');
+        fillGrad.addColorStop(1, 'rgba(0, 128, 128, 0.85)');
+        crystalColor = '#00ffff';
+        strokeColor = '#ffffff';
+      }
+
+      ctx.fillStyle = fillGrad;
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = 2.0;
+      
+      // Draw polygonal crystal outline
       ctx.beginPath();
       ctx.moveTo(this.x, this.y - this.size);
       ctx.lineTo(this.x + this.size * 0.8, this.y - this.size * 0.4);
@@ -1079,12 +1320,22 @@ class Obstacle {
       ctx.fill();
       ctx.stroke();
       
+      // Draw inner facet highlights for a premium 3D quartz look
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+      ctx.lineWidth = 1.0;
       ctx.beginPath();
       ctx.moveTo(this.x, this.y - this.size);
-      ctx.lineTo(this.x, this.y + this.size * 0.4);
+      ctx.lineTo(this.x + this.size * 0.15, this.y + this.size * 0.15);
+      ctx.lineTo(this.x - this.size * 0.8, this.y - this.size * 0.4);
+      
+      ctx.moveTo(this.x + this.size * 0.15, this.y + this.size * 0.15);
+      ctx.lineTo(this.x + this.size * 0.8, this.y - this.size * 0.4);
+      
+      ctx.moveTo(this.x + this.size * 0.15, this.y + this.size * 0.15);
+      ctx.lineTo(this.x + this.size * 0.4, this.y + this.size);
+      
+      ctx.moveTo(this.x + this.size * 0.15, this.y + this.size * 0.15);
       ctx.lineTo(this.x - this.size, this.y + this.size * 0.4);
-      ctx.moveTo(this.x, this.y + this.size * 0.4);
-      ctx.lineTo(this.x + this.size, this.y + this.size * 0.4);
       ctx.stroke();
     } else if (this.type === 'crafting_table_2') {
       // Modern hexagonal table with golden core
@@ -1201,30 +1452,289 @@ class Obstacle {
       ctx.stroke();
       
       ctx.fillStyle = '#ff00ff';
+          } else if (this.type === 'rock_pillar') {
+      // Ground shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
       ctx.beginPath();
-      ctx.arc(this.x, this.y, this.size * 0.4, 0, Math.PI * 2);
+      ctx.ellipse(this.x + 4, this.y + this.size * 0.7, this.size * 1.1, this.size * 0.4, 0, 0, Math.PI * 2);
       ctx.fill();
-    } else if (this.type === 'rock_pillar') {
-      // Draw stalagmite rock pillar (pointed shard polygon)
-      ctx.fillStyle = 'rgba(90, 90, 93, 0.35)';
-      ctx.strokeStyle = '#5a5a5d';
-      ctx.lineWidth = 2.5;
+
+      // Stalagmite stone base gradient
+      const grad = ctx.createLinearGradient(this.x - this.size, this.y, this.x + this.size, this.y);
+      grad.addColorStop(0, '#2d2d30');
+      grad.addColorStop(0.5, '#505055');
+      grad.addColorStop(1, '#1e1e20');
+      
+      ctx.fillStyle = grad;
+      ctx.strokeStyle = '#6e6e73';
+      ctx.lineWidth = 2.0;
       ctx.beginPath();
       ctx.moveTo(this.x - this.size, this.y + this.size * 0.7);
       ctx.lineTo(this.x - this.size * 0.4, this.y - this.size);
-      ctx.lineTo(this.x + this.size * 0.4, this.y - this.size * 1.2);
+      ctx.lineTo(this.x + this.size * 0.4, this.y - this.size * 1.25);
       ctx.lineTo(this.x + this.size, this.y + this.size * 0.7);
       ctx.lineTo(this.x + this.size * 0.5, this.y + this.size * 0.9);
       ctx.lineTo(this.x - this.size * 0.5, this.y + this.size * 0.9);
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
+
+      // Glowing crystal veins running through the rock
+      const veinColors = ['#00f3ff', '#9d00ff', '#ffe600'];
+      const veinColor = veinColors[gameCtx.currentCaveIndex] || '#00f3ff';
+      ctx.strokeStyle = veinColor;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(this.x - this.size * 0.3, this.y + this.size * 0.8);
+      ctx.lineTo(this.x - this.size * 0.1, this.y + this.size * 0.2);
+      ctx.lineTo(this.x + this.size * 0.2, this.y - this.size * 0.4);
+      ctx.lineTo(this.x + this.size * 0.1, this.y - this.size * 1.0);
+      ctx.stroke();
+    } else if (this.type === 'stalactite') {
+      // Stalactites hang from ceiling - draw a soft offset shadow circle on the ground
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+      ctx.beginPath();
+      ctx.arc(this.x + 8, this.y + 12, this.size * 0.65, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Crystalline stalactite body with glowing gradient
+      const veinColors = ['#00f3ff', '#9d00ff', '#ffe600'];
+      const veinColor = veinColors[gameCtx.currentCaveIndex] || '#7896dc';
+      
+      const grad = ctx.createLinearGradient(this.x, this.y - this.size, this.x, this.y + this.size * 1.25);
+      grad.addColorStop(0, 'rgba(40, 40, 50, 0.85)');
+      grad.addColorStop(0.6, veinColor);
+      grad.addColorStop(1, '#ffffff'); // bright glowing tip
+
+      ctx.fillStyle = grad;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.8;
       
       ctx.beginPath();
-      ctx.moveTo(this.x - this.size * 0.4, this.y - this.size);
-      ctx.lineTo(this.x, this.y + this.size * 0.9);
-      ctx.lineTo(this.x + this.size * 0.4, this.y - this.size * 1.2);
+      ctx.moveTo(this.x - this.size * 0.7, this.y - this.size * 0.8);
+      ctx.lineTo(this.x + this.size * 0.7, this.y - this.size * 0.8);
+      ctx.lineTo(this.x + this.size * 0.25, this.y + this.size * 0.75);
+      ctx.lineTo(this.x, this.y + this.size * 1.35); // Sharp tip
+      ctx.closePath();
+      ctx.fill();
       ctx.stroke();
+      
+      // Specular highlight facets
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(this.x, this.y + this.size * 1.35);
+      ctx.lineTo(this.x - this.size * 0.35, this.y - this.size * 0.4);
+      ctx.stroke();
+    } else if (this.type === 'cave_torch') {
+      // Ambient floor glow from torch light
+      const floorGlow = ctx.createRadialGradient(this.x, this.y, 2, this.x, this.y, this.size * 2.2);
+      floorGlow.addColorStop(0, 'rgba(255, 80, 0, 0.22)');
+      floorGlow.addColorStop(1, 'rgba(255, 80, 0, 0)');
+      ctx.fillStyle = floorGlow;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size * 2.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Wooden torch pole
+      ctx.strokeStyle = '#6b350f';
+      ctx.lineWidth = 4.0;
+      ctx.beginPath();
+      ctx.moveTo(this.x, this.y + this.size * 0.8);
+      ctx.lineTo(this.x, this.y - this.size * 0.15);
+      ctx.stroke();
+      
+      // Iron bracket base
+      ctx.strokeStyle = '#4a4a4d';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y - this.size * 0.15, this.size * 0.35, 0, Math.PI, true);
+      ctx.stroke();
+      
+      // Dark coal/burnt tip
+      ctx.fillStyle = '#222222';
+      ctx.fillRect(this.x - 4, this.y - this.size * 0.45, 8, 6);
+      
+      // Dynamic triple-layered flame
+      const pulse = 1.0 + Math.sin(Date.now() * 0.026 + this.x) * 0.18;
+      const flameH = this.size * 1.05 * pulse;
+      const flameW = this.size * 0.55 * pulse;
+      
+      // Outer Red flame
+      ctx.fillStyle = 'rgba(255, 69, 0, 0.9)';
+      ctx.beginPath();
+      ctx.moveTo(this.x - flameW, this.y - this.size * 0.45);
+      ctx.quadraticCurveTo(this.x - flameW * 0.4, this.y - this.size * 0.45 - flameH * 0.5, this.x, this.y - this.size * 0.45 - flameH);
+      ctx.quadraticCurveTo(this.x + flameW * 0.4, this.y - this.size * 0.45 - flameH * 0.5, this.x + flameW, this.y - this.size * 0.45);
+      ctx.closePath();
+      ctx.fill();
+
+      // Middle Yellow flame
+      ctx.fillStyle = '#ffd700';
+      ctx.beginPath();
+      ctx.moveTo(this.x - flameW * 0.65, this.y - this.size * 0.45);
+      ctx.quadraticCurveTo(this.x - flameW * 0.25, this.y - this.size * 0.45 - flameH * 0.55, this.x, this.y - this.size * 0.45 - flameH * 0.8);
+      ctx.quadraticCurveTo(this.x + flameW * 0.25, this.y - this.size * 0.45 - flameH * 0.55, this.x + flameW * 0.65, this.y - this.size * 0.45);
+      ctx.closePath();
+      ctx.fill();
+
+      // Inner White hot core
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y - this.size * 0.35, flameW * 0.35, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Spark emitters
+      if (Math.random() < 0.06) {
+        particleManager.addParticle(this.x, this.y - this.size * 0.45 - flameH * 0.65, '#ffd700', 1.4, 0.8, -Math.PI / 2 + (Math.random() * 0.4 - 0.2), 0.05);
+      }
+    } else if (this.type === 'auto_miner') {
+      // Soft shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+      ctx.beginPath();
+      ctx.ellipse(this.x + 4, this.y + this.size * 0.6, this.size * 1.15, this.size * 0.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Outer hexagonal frame (neon cyan)
+      ctx.fillStyle = 'rgba(0, 243, 255, 0.12)';
+      ctx.strokeStyle = '#00f3ff';
+      ctx.lineWidth = 2.5;
+      
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const angle = (i / 6) * Math.PI * 2 + Date.now() * 0.0012;
+        const rx = this.x + Math.cos(angle) * this.size;
+        const ry = this.y + Math.sin(angle) * this.size;
+        if (i === 0) ctx.moveTo(rx, ry);
+        else ctx.lineTo(rx, ry);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Rotating gear inside (golden)
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(Date.now() * 0.0045);
+      ctx.strokeStyle = '#ffe600';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.arc(0, 0, this.size * 0.58, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      const teeth = 8;
+      for (let i = 0; i < teeth; i++) {
+        const angle = (i / teeth) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(angle) * (this.size * 0.58), Math.sin(angle) * (this.size * 0.58));
+        ctx.lineTo(Math.cos(angle) * (this.size * 0.74), Math.sin(angle) * (this.size * 0.74));
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // Vibrating high-speed central drill bit
+      const vibX = (Math.random() - 0.5) * 1.8;
+      const vibY = (Math.random() - 0.5) * 1.8;
+      const drillPulse = 1.0 + Math.sin(Date.now() * 0.06) * 0.16;
+      
+      ctx.save();
+      ctx.translate(this.x + vibX, this.y + vibY);
+      
+      const grad = ctx.createLinearGradient(-12, -12, 12, 12);
+      grad.addColorStop(0, '#ffffff');
+      grad.addColorStop(0.4, '#00f3ff');
+      grad.addColorStop(1, '#004466');
+      
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(0, -this.size * 0.48 * drillPulse);
+      ctx.lineTo(this.size * 0.38, this.size * 0.38);
+      ctx.lineTo(-this.size * 0.38, this.size * 0.38);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Central hot glowing plasma core
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(0, 0, this.size * 0.18, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.restore();
+    } else if (this.type === 'herb_red' || this.type === 'herb_blue' || this.type === 'herb_yellow') {
+      // Draw plant stem/leaves
+      ctx.strokeStyle = '#228b22'; // forest green stem
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(this.x, this.y + 6);
+      ctx.lineTo(this.x, this.y - 6);
+      ctx.stroke();
+
+      // Leaves
+      ctx.fillStyle = '#32cd32';
+      ctx.beginPath();
+      ctx.ellipse(this.x - 5, this.y - 1, 5, 2, Math.PI/6, 0, Math.PI*2);
+      ctx.ellipse(this.x + 5, this.y - 2, 5, 2, -Math.PI/6, 0, Math.PI*2);
+      ctx.fill();
+
+      // Glowing flower core
+      ctx.fillStyle = this.color;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y - 7, 5, 0, Math.PI*2);
+      ctx.fill();
+    } else if (this.type === 'alchemy_table') {
+      // Draw wooden table surface
+      ctx.fillStyle = '#5c4033'; // wood brown
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Draw glass flasks on top
+      const flaskRadius = 4;
+      
+      // Health Potion flask (red)
+      ctx.fillStyle = '#ff3366';
+      ctx.beginPath();
+      ctx.arc(this.x - 7, this.y - 4, flaskRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Energy Potion flask (blue)
+      ctx.fillStyle = '#3399ff';
+      ctx.beginPath();
+      ctx.arc(this.x + 7, this.y - 4, flaskRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Speed Potion flask (yellow/orange)
+      ctx.fillStyle = '#ffd700';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y + 6, flaskRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Interaction prompt [E] if player is close
+      if (gameCtx.player) {
+        const dist = Math.hypot(gameCtx.player.x - this.x, gameCtx.player.y - this.y);
+        if (dist < 75) {
+          ctx.save();
+          ctx.font = "bold 10px 'Orbitron', sans-serif";
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+          ctx.strokeStyle = '#cc33ff';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.roundRect(this.x - 55, this.y - this.size - 25, 110, 18, 4);
+          ctx.fill();
+          ctx.stroke();
+          
+          ctx.fillStyle = '#ffffff';
+          ctx.textAlign = 'center';
+          ctx.fillText("CHẾ THUỐC [E]", this.x, this.y - this.size - 13);
+          ctx.restore();
+        }
+      }
     }
 
     // Health bar
@@ -1259,6 +1769,11 @@ class Obstacle {
     else if (this.type === 'elemental_bomb') geom = new THREE.SphereGeometry(this.size * 0.7, 8, 8);
     else if (this.type === 'crafting_table_2') geom = new THREE.CylinderGeometry(this.size * 0.9, this.size * 0.9, this.size * 0.8, 6);
     else if (this.type === 'ore_stone' || this.type === 'ore_iron' || this.type === 'rock_pillar' || this.type === 'ore_gold' || this.type === 'ore_diamond') geom = new THREE.DodecahedronGeometry(this.size * 0.9);
+    else if (this.type === 'stalactite') geom = new THREE.ConeGeometry(this.size * 0.8, this.size * 2.0, 6);
+    else if (this.type === 'cave_torch') geom = new THREE.CylinderGeometry(2, 2, this.size * 1.5, 4);
+    else if (this.type === 'auto_miner') geom = new THREE.BoxGeometry(this.size * 1.8, this.size * 1.4, this.size * 1.8);
+    else if (this.type === 'herb_red' || this.type === 'herb_blue' || this.type === 'herb_yellow') geom = new THREE.ConeGeometry(this.size * 0.8, this.size * 1.4, 5);
+    else if (this.type === 'alchemy_table') geom = new THREE.BoxGeometry(this.size * 1.9, this.size * 1.0, this.size * 1.9);
     
     const mainMesh = new THREE.Mesh(geom, mat);
     if (this.type === 'spiketrap') {

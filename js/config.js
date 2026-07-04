@@ -151,10 +151,10 @@ const CHARACTERS = {
     rarity: 'mythical',
     cost: 30000,
     stats: {
-      maxHp: 200,
+      maxHp: 250,
       speed: 4.4,
-      damageModifier: 2.0,
-      cooldownModifier: 0.80,
+      damageModifier: 2.5,
+      cooldownModifier: 0.70,
       magnetRadius: 100,
       critChance: 0.25
     }
@@ -171,8 +171,8 @@ const CHARACTERS = {
     stats: {
       maxHp: 160,
       speed: 3.3,
-      damageModifier: 1.35,
-      cooldownModifier: 0.90,
+      damageModifier: 1.75,
+      cooldownModifier: 0.80,
       magnetRadius: 90,
       critChance: 0.10
     }
@@ -189,8 +189,8 @@ const CHARACTERS = {
     stats: {
       maxHp: 120,
       speed: 3.7,
-      damageModifier: 1.50,
-      cooldownModifier: 0.85,
+      damageModifier: 1.85,
+      cooldownModifier: 0.75,
       magnetRadius: 95,
       critChance: 0.15
     }
@@ -206,9 +206,9 @@ const CHARACTERS = {
     cost: 22000,
     stats: {
       maxHp: 110,
-      speed: 3.9,
-      damageModifier: 1.40,
-      cooldownModifier: 0.80,
+      speed: 4.4,
+      damageModifier: 1.90,
+      cooldownModifier: 0.65,
       magnetRadius: 90,
       critChance: 0.15
     }
@@ -225,10 +225,154 @@ const CHARACTERS = {
     stats: {
       maxHp: 100,
       speed: 3.5,
-      damageModifier: 1.20,
-      cooldownModifier: 0.80,
+      damageModifier: 1.70,
+      cooldownModifier: 0.70,
       magnetRadius: 90,
       critChance: 0.15
+    }
+  },
+  'nina': {
+    name: 'Nina',
+    title: 'Nữ Hiệp Sĩ Lam',
+    desc: 'Dũng sĩ cận chiến kiên cường. Tăng +10% máu tối đa. Trang bị Giáp và Kiếm Khiên 3D phát sáng độc quyền.',
+    icon: '🛡️',
+    startElement: 'water',
+    spells: ['marina_z', 'marina_x', 'marina_c', 'marina_v'],
+    rarity: 'common',
+    cost: 1500,
+    stats: {
+      maxHp: 150,
+      speed: 3.3,
+      damageModifier: 1.1,
+      cooldownModifier: 0.9,
+      magnetRadius: 90,
+      critChance: 0.05
+    }
+  },
+  'rado': {
+    name: 'Rado',
+    title: 'Đại Chiến Binh Rìu',
+    desc: 'Dũng sĩ với sức mạnh thể chất cuồng bạo. Tăng +15% sát thương, tấn công chậm hơn (+10% Cooldown). Trang bị Mũ sừng và Rìu chiến 3D khổng lồ.',
+    icon: '🪓',
+    startElement: 'fire',
+    spells: ['ignis_z', 'ignis_x', 'ignis_c', 'ignis_v'],
+    rarity: 'common',
+    cost: 3000,
+    stats: {
+      maxHp: 110,
+      speed: 3.2,
+      damageModifier: 1.40,
+      cooldownModifier: 1.10,
+      magnetRadius: 85,
+      critChance: 0.15
+    }
+  },
+  'kaelen': {
+    name: 'Kaelen',
+    title: 'Cung Thủ Thần Tốc',
+    desc: 'Cung thủ trinh sát cơ động. Tăng +20% tốc độ di chuyển nhanh nhẹn. Trang bị Mũ trùm và Cung Thần Quang 3D.',
+    icon: '🏹',
+    startElement: 'wind',
+    spells: ['zephyr_z', 'zephyr_x', 'zephyr_c', 'zephyr_v'],
+    rarity: 'rare',
+    cost: 6000,
+    stats: {
+      maxHp: 95,
+      speed: 4.5,
+      damageModifier: 1.15,
+      cooldownModifier: 0.85,
+      magnetRadius: 90,
+      critChance: 0.12
+    }
+  },
+  'zenix': {
+    name: 'Zenix',
+    title: 'Song Kiếm Bóng Đêm',
+    desc: 'Ninja hắc ám cơ hội. Tăng +15% Chí Mạng và giảm 15% hồi chiêu. Trang bị Mặt nạ và Cặp Song Kiếm Katana 3D.',
+    icon: '⚔️',
+    startElement: 'umbra',
+    spells: ['umbra_z', 'umbra_x', 'umbra_c', 'umbra_v'],
+    rarity: 'epic',
+    cost: 12000,
+    stats: {
+      maxHp: 105,
+      speed: 3.8,
+      damageModifier: 1.30,
+      cooldownModifier: 0.85,
+      magnetRadius: 95,
+      critChance: 0.25
+    }
+  },
+  'goliath': {
+    name: 'Goliath',
+    title: 'Kẻ Khổng Lồ Thiết Giáp',
+    desc: 'Chiến binh mang giáp nặng siêu thủ. Tăng +40% Máu tối đa cực trâu, nhưng chạy chậm đi 10% tốc độ. Trang bị Búa Tạ Thép 3D.',
+    icon: '🔨',
+    startElement: 'gaia',
+    spells: ['gaia_z', 'gaia_x', 'gaia_c', 'gaia_v'],
+    rarity: 'epic',
+    cost: 20000,
+    stats: {
+      maxHp: 210,
+      speed: 3.0,
+      damageModifier: 1.45,
+      cooldownModifier: 1.05,
+      magnetRadius: 90,
+      critChance: 0.08
+    }
+  },
+  'valkyrie': {
+    name: 'Valkyrie',
+    title: 'Nữ Chiến Thần Cánh Bạc',
+    desc: 'Chiến thần hộ vệ bầu trời. Tăng +10% Sát thương và +10% Tốc độ di chuyển. Trang bị Mũ cánh và Ngọn Thương Ánh Sáng 3D.',
+    icon: '🔱',
+    startElement: 'lightning',
+    spells: ['tesla_z', 'tesla_x', 'tesla_c', 'tesla_v'],
+    rarity: 'legendary',
+    cost: 30000,
+    stats: {
+      maxHp: 120,
+      speed: 3.8,
+      damageModifier: 1.65,
+      cooldownModifier: 0.85,
+      magnetRadius: 95,
+      critChance: 0.15
+    }
+  },
+  'lucius': {
+    name: 'Lucius',
+    title: 'Hiệp Sĩ Thánh Quang',
+    desc: 'Hiệp sĩ thánh điện hoàng gia. Tự động hồi 2 HP mỗi giây, +10% Máu tối đa. Trang bị Vương miện và Thánh Kiếm Excalibur 3D.',
+    icon: '🗡️',
+    startElement: 'creation',
+    spells: ['creation_z', 'creation_x', 'creation_c', 'creation_v'],
+    rarity: 'legendary',
+    cost: 45000,
+    stats: {
+      maxHp: 145,
+      speed: 3.5,
+      damageModifier: 1.75,
+      cooldownModifier: 0.80,
+      magnetRadius: 100,
+      critChance: 0.15
+    }
+  },
+  'eldrin': {
+    name: 'Eldrin',
+    title: 'Ma Pháp Đại Sư',
+    desc: 'Đại sư kiếm phép. Tăng +25% Sát thương chí mạng, cơ hội bắn song hành phép tăng +15%. Trang bị Kiếm Phép Thạch Anh 3D.',
+    icon: '🔮',
+    startElement: 'frost',
+    spells: ['frost_z', 'frost_x', 'frost_c', 'frost_v'],
+    rarity: 'mythical',
+    cost: 60000,
+    stats: {
+      maxHp: 130,
+      speed: 3.6,
+      damageModifier: 2.10,
+      cooldownModifier: 0.75,
+      magnetRadius: 100,
+      critChance: 0.20
     }
   }
 };
@@ -293,10 +437,10 @@ const SPELL_RECIPES = {
   'magma_v': { name: 'Thiên Thạch Phun Trào ☄️', desc: 'Gọi mưa thiên thạch nham thạch rơi xung quanh tạo nhiều bãi dung nham lớn', cd: 900 },
 
   // Phép đặc trưng của Lycan (Sói Pháp Sư)
-  'wolf_z': { name: 'Triệu Hồi Đồng Bọn 🐺', desc: 'Gọi 4 sói con đồng hành chạy cắn xé quái vật lân cận', cd: 80 },
-  'wolf_x': { name: 'Khè Hơi Dã Thú 🌬️', desc: 'Gầm thét khè hơi khiến toàn bộ quái xung quanh văng cực xa', cd: 120 },
-  'wolf_c': { name: 'Hút & Vồ Đập Đất 🐾', desc: 'Hút quái trước mặt rồi vồ nhảy nện chết quái thường, rút 1/3 HP boss', cd: 360 },
-  'wolf_v': { name: 'Hóa Hình Sói 👹', desc: 'Biến sói khổng lồ tăng tốc chạy, giảm sát thương nhận, tăng sát thương phép & tầm đánh', cd: 600 },
+  'wolf_z': { name: 'Triệu Hồi Đồng Bọn 🐺', desc: 'Gọi 5 sói con đồng hành chạy cắn xé quái vật lân cận và hồi nộ', cd: 50 },
+  'wolf_x': { name: 'Khè Hơi Dã Thú 🌬️', desc: 'Gầm thét khè hơi siêu rộng đẩy lùi quái cực xa và hồi nộ', cd: 90 },
+  'wolf_c': { name: 'Hút & Vồ Đập Đất 🐾', desc: 'Hút quái vồ nện nổ rộng, rút 70% HP boss và hồi nộ', cd: 270 },
+  'wolf_v': { name: 'Hóa Hình Sói 👹', desc: 'Hóa sói vô hạn sở hữu HP riêng lớn, tăng sát thương/tốc chạy khủng, cào cấu hút máu. Trở lại dạng thường khi hết máu sói', cd: 600 },
 
   // Phép đặc trưng của Genesis (Sáng Thế Pháp Sư)
   'creation_z': { name: 'Khối Hộp Sáng Thế ⬜', desc: 'Khối năng lượng sáng thế nổ và co rút hút quái vào tâm', cd: 48 },
@@ -306,24 +450,24 @@ const SPELL_RECIPES = {
   
   // Phép đặc trưng của Gaia (Đại Địa Pháp Sư)
   'basic_gaia': { name: 'Thạch Cầu Thường', desc: 'Bắn tảng đá nhỏ lăn gây sát thương đè bẹp quái', cd: 20 },
-  'gaia_z': { name: 'Địa Chấn Lan Truyền ⛰️', desc: 'Tạo đường nứt đá gai nhọn làm choáng quái vật', cd: 180 },
-  'gaia_x': { name: 'Dây Leo Cổ Thụ 🌿', desc: 'Triệu hồi dây gai trói quái vật lân cận', cd: 240 },
-  'gaia_c': { name: 'Vòng Đá Hộ Vệ 🪨', desc: 'Tạo 3 hòn đá bay quanh người va đập nổ tung quái', cd: 300 },
-  'gaia_v': { name: 'Đại Địa Nứt Vỡ 🌋', desc: 'Đập đất tạo trận động đất cực lớn gây sát thương liên tiếp và làm chậm 80%', cd: 600 },
+  'gaia_z': { name: 'Địa Chấn Lan Truyền ⛰️', desc: 'Tạo đường nứt đá gai nhọn làm choáng quái vật', cd: 120 },
+  'gaia_x': { name: 'Dây Leo Cổ Thụ 🌿', desc: 'Triệu hồi dây gai trói quái vật lân cận', cd: 150 },
+  'gaia_c': { name: 'Vòng Đá Hộ Vệ 🪨', desc: 'Tạo 3 hòn đá bay quanh người va đập nổ tung quái', cd: 180 },
+  'gaia_v': { name: 'Đại Địa Nứt Vỡ 🌋', desc: 'Đập đất tạo trận động đất cực lớn gây sát thương liên tiếp và làm chậm 80%', cd: 450 },
 
   // Phép đặc trưng của Umbra (Hắc Ám Pháp Sư)
   'basic_umbra': { name: 'Ám Cầu Thường', desc: 'Bắn ám cầu bay uốn lượn hút sinh lực quái', cd: 20 },
-  'umbra_z': { name: 'Hắc Cầu Nguyền Rủa 🌑', desc: 'Bắn ám cầu xuyên thấu nguyền rủa, quái chết phát nổ lây lan', cd: 150 },
-  'umbra_x': { name: 'Hắc Ám Kết Giới 🕸️', desc: 'Tạo vùng suy yếu quái nhận thêm 30% sát thương và hồi máu cho ta', cd: 300 },
-  'umbra_c': { name: 'Mưa Băng Hoại 🌧️', desc: 'Cơn mưa ăn mòn gây sát thương thiêu đốt hắc ám diện rộng cực lâu', cd: 270 },
-  'umbra_v': { name: 'Hắc Thần Hiện Thân 👑', desc: 'Tăng 50% tốc chạy, nhận 30% hút máu (Lifesteal) và đòn đánh bắn ra hắc tiễn xuyên thấu', cd: 900 },
+  'umbra_z': { name: 'Hắc Cầu Nguyền Rủa 🌑', desc: 'Bắn ám cầu xuyên thấu nguyền rủa, quái chết phát nổ lây lan', cd: 100 },
+  'umbra_x': { name: 'Hắc Ám Kết Giới 🕸️', desc: 'Tạo vùng suy yếu quái nhận thêm 50% sát thương và hồi máu cho ta', cd: 180 },
+  'umbra_c': { name: 'Mưa Băng Hoại 🌧️', desc: 'Cơn mưa ăn mòn gây sát thương thiêu đốt hắc ám diện rộng cực lâu', cd: 160 },
+  'umbra_v': { name: 'Hắc Thần Hiện Thân 👑', desc: 'Tăng 75% tốc chạy, nhận 45% hút máu (Lifesteal) và đòn đánh bắn ra hắc tiễn xuyên thấu', cd: 600 },
   
   // Phép đặc trưng của Chronos (Thời Không Pháp Sư)
-  'basic_chronos': { name: 'Đạn Thời Gian', desc: 'Bắn đạn thời không gây sát thương và làm chậm quái', cd: 20 },
-  'chronos_z': { name: 'Hạt Cầu Thời Không ⏳', desc: 'Bắn ra hạt cầu năng lượng thời gian nổ chậm sau 1.2 giây', cd: 120 },
-  'chronos_x': { name: 'Ngưng Đọng Kết Giới 🌀', desc: 'Tạo kết giới ngưng đọng làm chậm 80% quái vật lọt vào và gây sát thương', cd: 260 },
-  'chronos_c': { name: 'Bom Không Gian 💣', desc: 'Thả quả bom không gian khổng lồ nổ diện rộng cực mạnh', cd: 320 },
-  'chronos_v': { name: 'Tua Ngược Thời Gian 🔄', desc: 'Hồi ngay 35% máu và làm đóng băng toàn bộ quái vật trên bản đồ trong 3 giây', cd: 750 },
+  'basic_chronos': { name: 'Đạn Thời Gian', desc: 'Bắn đạn thời không bánh răng xoay làm chậm quái', cd: 20 },
+  'chronos_z': { name: 'Hạt Cầu Thời Không ⏳', desc: 'Bắn ra hạt cầu năng lượng thời gian la mã nổ chậm sau 1.2 giây', cd: 75 },
+  'chronos_x': { name: 'Ngưng Đọng Kết Giới 🌀', desc: 'Mặt đồng hồ thời gian làm chậm 80% quái vật lọt vào và gây sát thương', cd: 150 },
+  'chronos_c': { name: 'Bom Không Gian 💣', desc: 'Thả hố đen vũ trụ khổng lồ nổ diện rộng cực mạnh', cd: 200 },
+  'chronos_v': { name: 'Tua Ngược Thời Gian 🔄', desc: 'Hồi ngay 50% máu và đóng băng cứng toàn bộ quái vật trên bản đồ trong 5 giây', cd: 450 },
 
   // Phép cũ thừa kế
   'fire_lightning': { name: 'Quả Cầu Plasma', desc: 'Cầu điện nổ diện rộng cực mạnh', cd: 60 },
@@ -342,10 +486,10 @@ const SPELL_RECIPES = {
   
   // Phép đặc trưng của Venom (Chiến Binh Độc Dược)
   'basic_venom': { name: 'Tia Độc', desc: 'Bắn tia độc nhỏ gây sát thương và làm chậm nhẹ', cd: 20 },
-  'venom_z': { name: 'Quả Cầu Độc', desc: 'Bắn cầu độc phát nổ tạo vũng độc dưới đất', cd: 90 },
-  'venom_x': { name: 'Bình Axit', desc: 'Ném bình axit tạo bãi độc lớn ăn mòn và làm chậm quái', cd: 240 },
-  'venom_c': { name: 'Rắn Độc', desc: 'Triệu hồi rắn độc xuyên thấu mọi kẻ địch', cd: 300 },
-  'venom_v': { name: 'Sương Độc', desc: 'Tỏa khí độc làm suy yếu và rút HP quái cực mạnh', cd: 600 },
+  'venom_z': { name: 'Quả Cầu Độc', desc: 'Bắn cầu độc phát nổ tạo vũng độc sủi bọt dưới đất', cd: 60 },
+  'venom_x': { name: 'Bình Axit', desc: 'Ném bình axit tạo bãi độc sôi lớn ăn mòn và làm chậm quái', cd: 140 },
+  'venom_c': { name: 'Rắn Độc', desc: 'Triệu hồi rắn độc xuyên thấu mọi kẻ địch', cd: 180 },
+  'venom_v': { name: 'Sương Độc', desc: 'Tỏa khí độc làm suy yếu và rút HP quái cực mạnh', cd: 400 },
 
   'gun_handgun': { name: 'Súng Lục Neon', desc: 'Bắn tia đạn neon nhanh và mạnh', cd: 15 },
   'gun_rifle': { name: 'Súng Liên Thanh', desc: 'Bắn liên tục tia đạn tầm trung', cd: 7 },
@@ -465,6 +609,12 @@ function getActualSpellCD(player, spellIndex) {
     baseCD = Math.max(12, baseCD - (lvl - 1) * (reductions[spellIndex] || 5));
   } else if (player.characterKey === 'wolf') {
     const reductions = [20, 15, 45, 60];
+    baseCD = Math.max(12, baseCD - (lvl - 1) * (reductions[spellIndex] || 5));
+  } else if (player.characterKey === 'gaia') {
+    const reductions = [15, 20, 25, 60];
+    baseCD = Math.max(12, baseCD - (lvl - 1) * (reductions[spellIndex] || 5));
+  } else if (player.characterKey === 'umbra') {
+    const reductions = [12, 20, 20, 60];
     baseCD = Math.max(12, baseCD - (lvl - 1) * (reductions[spellIndex] || 5));
   } else if (player.characterKey === 'chronos') {
     const reductions = [20, 30, 45, 60];

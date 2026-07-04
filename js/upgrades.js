@@ -133,6 +133,18 @@ const UPGRADES = [
       player.upgrades.wisp = (player.upgrades.wisp || 0) + 1;
       player.wispCount = player.upgrades.wisp;
     }
+  },
+  {
+    id: 'miner_efficiency',
+    name: 'Hiệu Suất Máy Đào 💎',
+    desc: 'Tăng 20% tốc độ khai thác tài nguyên của tất cả Máy Đào.',
+    icon: '💎',
+    rarity: 'rare',
+    maxLevel: 5,
+    effect: (player) => {
+      player.upgrades.miner_efficiency = (player.upgrades.miner_efficiency || 0) + 1;
+      player.minerEfficiencyModifier = 1 + player.upgrades.miner_efficiency * 0.20;
+    }
   }
 ];
 
@@ -203,28 +215,28 @@ function getRandomUpgrades(player, count = 3) {
       } else if (spellKey === 'wolf_z') {
         const nextLvl = lvl + 1;
         if (nextLvl === 3) {
-          customDesc = `Tăng 15% sát thương và tăng số đệ triệu hồi lên 5 sói (Cấp ${nextLvl}/${maxLvl}).`;
+          customDesc = `Tăng 15% sát thương và tăng số đệ triệu hồi lên 6 sói (Cấp ${nextLvl}/${maxLvl}).`;
         } else if (nextLvl === 5) {
-          customDesc = `Tăng 15% sát thương và tiến hóa thành 6 sói lửa cắn gây cháy quái (Cấp ${nextLvl}/${maxLvl}).`;
+          customDesc = `Tăng 15% sát thương và tiến hóa thành 8 sói lửa cắn gây cháy quái (Cấp ${nextLvl}/${maxLvl}).`;
         } else {
           customDesc = `Tăng 15% sát thương cắn xé của sói con đồng hành (Cấp ${nextLvl}/${maxLvl}).`;
         }
       } else if (spellKey === 'wolf_x') {
         const nextLvl = lvl + 1;
         if (nextLvl === 5) {
-          customDesc = `Tăng 20% bán kính, 15% sát thương và triệt tiêu đạn quái trong tầm dội (Cấp ${nextLvl}/${maxLvl}).`;
+          customDesc = `Tăng 20% bán kính (lên tới 540px), 15% sát thương và triệt tiêu đạn quái trong tầm dội (Cấp ${nextLvl}/${maxLvl}).`;
         } else {
-          customDesc = `Tăng 20% bán kính gầm thét dã thú và tăng 15% sát thương (Cấp ${nextLvl}/${maxLvl}).`;
+          customDesc = `Tăng 20% bán kính gầm thét siêu rộng và tăng 15% sát thương (Cấp ${nextLvl}/${maxLvl}).`;
         }
       } else if (spellKey === 'wolf_c') {
         const nextLvl = lvl + 1;
         if (nextLvl === 5) {
-          customDesc = `Tăng 25% sát thương và tạo thêm 3 đường nứt địa chấn nham thạch làm choáng (Cấp ${nextLvl}/${maxLvl}).`;
+          customDesc = `Tăng 25% sát thương vồ nện đất và tạo thêm 3 đường nứt địa chấn nham thạch làm choáng (Cấp ${nextLvl}/${maxLvl}).`;
         } else {
           customDesc = `Tăng 25% sát thương vồ nện dã thú diện rộng (Cấp ${nextLvl}/${maxLvl}).`;
         }
       } else if (spellKey === 'wolf_v') {
-        customDesc = `Tăng 2s hóa sói. Dạng sói nhận 8% hút máu cận chiến và giết quái hồi giờ hóa hình (Cấp ${lvl + 1}/${maxLvl}).`;
+        customDesc = `Tăng 25% Sinh lực tối đa dạng Sói (đạt tới 250% HP người). Dạng sói nhận 15% hút máu cận chiến để hồi máu sói (Cấp ${lvl + 1}/${maxLvl}).`;
       } else if (spellKey === 'creation_z') {
         customDesc = `Tăng 20% bán kính hút của hố đen và tăng 20% sát thương nổ sụp đổ (Cấp ${lvl + 1}/${maxLvl}).`;
       } else if (spellKey === 'creation_x') {

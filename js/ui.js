@@ -185,6 +185,18 @@ try {
   if (savedGameSettings) {
     Object.assign(window.gameSettings, JSON.parse(savedGameSettings));
   }
+  window.gameSettings.keyBindings = window.gameSettings.keyBindings || {
+    spell1: 'z',
+    spell2: 'x',
+    spell3: 'c',
+    spell4: 'v',
+    buildMenu: 'b',
+    interact: 'e',
+    modeSpell: '1',
+    modeBuild: '2',
+    modeGun: '3',
+    dash: 'q'
+  };
   const savedVolume = localStorage.getItem('spellfusion_settings_volume');
   if (savedVolume !== null) {
     window.gameVolume = parseInt(savedVolume);
@@ -885,13 +897,52 @@ function togglePause() {
 
 function setupInputs() {
   window.addEventListener('keydown', (e) => {
-    keys[e.key.toLowerCase()] = true;
+    // 1. Key rebind handling
+    if (window.activeRebindAction) {
+      let pressedKey = e.key.toLowerCase();
+      if (e.code === 'Space') pressedKey = 'space';
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') pressedKey = 'shift';
+      
+      if (pressedKey !== 'escape') {
+        window.gameSettings.keyBindings[window.activeRebindAction] = pressedKey;
+        localStorage.setItem('spellfusion_settings_game', JSON.stringify(window.gameSettings));
+        window.activeRebindAction = null;
+        if (typeof window.renderControlsList === 'function') {
+          window.renderControlsList();
+        }
+      } else {
+        window.activeRebindAction = null;
+        if (typeof window.renderControlsList === 'function') {
+          window.renderControlsList();
+        }
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+
+    const keyLower = e.key.toLowerCase();
+    keys[keyLower] = true;
+    if (e.code === 'Space') keys[' '] = true;
+    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys['shift'] = true;
     
     if (e.key === 'Escape' || e.key === 'Esc') {
       togglePause();
+      return;
     }
 
-    if (e.key === 'b' || e.key === 'B') {
+    const p = gameCtx.player;
+    if (!p) return;
+
+    const kb = window.gameSettings.keyBindings;
+    const keyBuildMenu = kb.buildMenu || 'b';
+    const keyInteract = kb.interact || 'e';
+    const keyModeSpell = kb.modeSpell || '1';
+    const keyModeBuild = kb.modeBuild || '2';
+    const keyModeGun = kb.modeGun || '3';
+
+    // Toggle build menu
+    if (keyLower === keyBuildMenu) {
       if (gameCtx.gameState === 'PLAYING') {
         const overlay = document.getElementById('crafting-overlay');
         if (overlay) {
@@ -911,15 +962,46 @@ function setupInputs() {
       }
     }
 
-    if (e.key === 'e' || e.key === 'E') {
+    // Toggle Interact
+    if (keyLower === keyInteract) {
       if (gameCtx.gameState === 'PLAYING') {
         handleInteraction();
+      }
+    }
+
+    // Mode switches
+    if (keyLower === keyModeSpell) {
+      if (gameCtx.gameState === 'PLAYING') {
+        p.activeMode = 'spell';
+        if (typeof window.updateBuildHUD === 'function') window.updateBuildHUD();
+      }
+    }
+    if (keyLower === keyModeBuild) {
+      if (gameCtx.gameState === 'PLAYING') {
+        p.activeMode = 'build';
+        if (typeof window.updateBuildHUD === 'function') window.updateBuildHUD();
+      }
+    }
+    if (keyLower === keyModeGun) {
+      if (gameCtx.gameState === 'PLAYING') {
+        if (p.equippedGun) {
+          p.activeMode = 'gun';
+          if (typeof window.updateBuildHUD === 'function') window.updateBuildHUD();
+        } else {
+          const bKey = (kb.buildMenu || 'b').toUpperCase();
+          if (window.FloatingText && gameCtx.floatingTexts) {
+            gameCtx.floatingTexts.push(new FloatingText(p.x, p.y - 30, `CHƯA CÓ SÚNG! HÃY CHẾ TẠO [${bKey}]`, "#ff0055"));
+          }
+        }
       }
     }
   });
 
   window.addEventListener('keyup', (e) => {
-    keys[e.key.toLowerCase()] = false;
+    const keyLower = e.key.toLowerCase();
+    keys[keyLower] = false;
+    if (e.code === 'Space') keys[' '] = false;
+    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys['shift'] = false;
   });
 
   window.addEventListener('mousemove', (e) => {
@@ -930,6 +1012,10 @@ function setupInputs() {
 
   window.addEventListener('mousedown', (e) => {
     if (e.button === 0) {
+      // Bỏ qua click chuột khi nhấn vào các phần tử giao diện HTML
+      if (e.target.closest('#build-hud') || e.target.closest('#crafting-overlay') || e.target.closest('#alchemy-overlay') || e.target.closest('#settings-modal') || e.target.closest('#character-mirror-panel') || e.target.closest('#game-hud') || e.target.closest('.modal') || e.target.closest('#shop-overlay') || e.target.closest('#lobby-menu') || e.target.closest('.ui-container') || e.target.closest('#hud-container')) {
+        return;
+      }
       // Nhấp chuột trái để đặt công trình khi đang chọn công thức
       const overlay = document.getElementById('crafting-overlay');
       if (overlay && overlay.style.display !== 'none' && gameCtx.gameState === 'PLAYING') {
@@ -975,6 +1061,21 @@ function setupInputs() {
       exitToMenu();
     });
   }
+
+  // Mouse wheel scrolling to change structure selection in Build Mode
+  window.addEventListener('wheel', (e) => {
+    if (gameCtx.player && gameCtx.player.activeMode === 'build') {
+      const types = Object.keys(BUILD_ITEMS_DATA);
+      let index = types.indexOf(gameCtx.player.selectedBuildType);
+      if (e.deltaY > 0) {
+        index = (index + 1) % types.length;
+      } else {
+        index = (index - 1 + types.length) % types.length;
+      }
+      gameCtx.player.selectedBuildType = types[index];
+      if (typeof window.updateBuildHUD === 'function') window.updateBuildHUD();
+    }
+  });
 
   // Khởi động lắng nghe chọn thẻ chế tạo
   setupCrafting();
@@ -1114,6 +1215,7 @@ function setupCrosshairCustomizer() {
       activateTab(btn.getAttribute('data-panel'));
       // Update diagnostics when perf tab is activated
       if (btn.getAttribute('data-panel') === 'perf') updateDiagnostics();
+      if (btn.getAttribute('data-panel') === 'controls') renderControlsList();
     });
   });
 
@@ -1385,7 +1487,140 @@ function setupCrosshairCustomizer() {
   updateSettingsCrosshairPreview();
 }
 
+window.activeRebindAction = null;
+const CONTROL_NAMES = {
+  spell1: "Thi triển Chiêu Z",
+  spell2: "Thi triển Chiêu X",
+  spell3: "Thi triển Chiêu C",
+  spell4: "Thi triển Chiêu V",
+  buildMenu: "Mở Menu Chế Tạo (B)",
+  interact: "Tương tác nhặt/Cổng (E)",
+  modeSpell: "Chế độ Phép thuật (Phím 1)",
+  modeBuild: "Chế độ Xây dựng (Phím 2)",
+  modeGun: "Chế độ Súng (Phím 3)",
+  dash: "Phím Lướt Nhanh (Q/Space)"
+};
 
+function renderControlsList() {
+  const container = document.getElementById('controls-list-container');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const kb = window.gameSettings.keyBindings;
+  Object.keys(CONTROL_NAMES).forEach(action => {
+    const actionName = CONTROL_NAMES[action];
+    const keyVal = kb[action] || '';
+    const isRebinding = window.activeRebindAction === action;
+
+    const row = document.createElement('div');
+    row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; font-size: 0.76rem; border-bottom: 1px dashed rgba(255,255,255,0.06); padding: 0.5rem 0.2rem;';
+    
+    const label = document.createElement('span');
+    label.style.color = '#a8b2db';
+    label.textContent = actionName;
+
+    const btn = document.createElement('button');
+    btn.className = 'btn';
+    btn.style.cssText = `
+      padding: 0.2rem 0.5rem;
+      font-size: 0.68rem;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: bold;
+      border-color: ${isRebinding ? 'var(--neon-magenta)' : 'var(--neon-cyan)'};
+      background: ${isRebinding ? 'rgba(255, 0, 85, 0.1)' : 'rgba(0, 243, 255, 0.05)'};
+      color: ${isRebinding ? 'var(--neon-magenta)' : 'var(--neon-cyan)'};
+      min-width: 90px;
+      text-align: center;
+      cursor: pointer;
+    `;
+    btn.textContent = isRebinding ? 'Ấn phím...' : keyVal.toUpperCase();
+
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      window.activeRebindAction = action;
+      renderControlsList();
+    });
+
+    row.appendChild(label);
+    row.appendChild(btn);
+    container.appendChild(row);
+  });
+}
+window.renderControlsList = renderControlsList;
+
+const BUILD_ITEMS_DATA = {
+  barricade: { name: "RÀO GỖ", icon: "🚧" },
+  stonewall: { name: "TƯỜNG ĐÁ", icon: "🧱" },
+  ironwall: { name: "TƯỜNG SẮT", icon: "⛓️" },
+  campfire: { name: "LỬA TRẠI", icon: "🔥" },
+  spiketrap: { name: "BẪY GAI", icon: "⚙️" },
+  turret: { name: "TRỤ SÚNG", icon: "🛡️" },
+  crafting_table_2: { name: "BÀN C.TẠO 2", icon: "🛠️" },
+  flame_turret: { name: "TRỤ LỬA", icon: "🌋" },
+  tesla_turret: { name: "TRỤ SÉT", icon: "⚡" },
+  electric_fence: { name: "RÀO ĐIỆN", icon: "🔌" },
+  elemental_bomb: { name: "BOM N.TỐ", icon: "💣" },
+  auto_miner: { name: "MÁY ĐÀO", icon: "💎" },
+  alchemy_table: { name: "MÁY THUỐC", icon: "⚗️" }
+};
+
+function updateBuildHUD() {
+  const buildHud = document.getElementById('build-hud');
+  if (!buildHud || !gameCtx.player) return;
+
+  const p = gameCtx.player;
+  if (p.activeMode !== 'build') {
+    buildHud.style.display = 'none';
+    const elementHud = document.getElementById('element-hud');
+    if (elementHud) elementHud.style.display = 'flex';
+    return;
+  }
+
+  buildHud.style.display = 'flex';
+  const elementHud = document.getElementById('element-hud');
+  if (elementHud) elementHud.style.display = 'none';
+
+  buildHud.innerHTML = '';
+  Object.keys(BUILD_ITEMS_DATA).forEach(type => {
+    const data = BUILD_ITEMS_DATA[type];
+    const qty = p.structureInventory[type] || 0;
+    const isSelected = p.selectedBuildType === type;
+
+    const slot = document.createElement('div');
+    slot.className = `build-hud-slot ${isSelected ? 'selected' : ''}`;
+    slot.style.cssText = `
+      width: 48px;
+      height: 48px;
+      border: 1.5px solid ${isSelected ? 'var(--neon-cyan)' : 'rgba(255,255,255,0.1)'};
+      border-radius: 8px;
+      background: ${isSelected ? 'rgba(0, 243, 255, 0.12)' : 'rgba(255,255,255,0.02)'};
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      cursor: pointer;
+      opacity: ${qty > 0 ? 1.0 : 0.4};
+      transition: all 0.15s;
+      box-shadow: ${isSelected ? '0 0 10px rgba(0, 243, 255, 0.4)' : 'none'};
+    `;
+
+    slot.innerHTML = `
+      <span style="font-size: 1.25rem;">${data.icon}</span>
+      <span style="position: absolute; bottom: 2px; right: 4px; font-family: 'Orbitron', sans-serif; font-size: 0.65rem; font-weight: bold; color: ${qty > 0 ? '#00ff7f' : '#fff'};">${qty}</span>
+    `;
+
+    slot.addEventListener('mousedown', (e) => {
+      p.selectedBuildType = type;
+      updateBuildHUD();
+      e.stopPropagation();
+    });
+
+    buildHud.appendChild(slot);
+  });
+}
+window.updateBuildHUD = updateBuildHUD;
+window.BUILD_ITEMS_DATA = BUILD_ITEMS_DATA;
 
 function setupMapSelection(MAPS) {
   const container = document.getElementById('map-selection');
@@ -1459,7 +1694,7 @@ window.upgradeWizardStat = (wizardKey, statType) => {
   if (!char) return;
   
   currentSaveData.wizardUpgrades = currentSaveData.wizardUpgrades || {};
-  currentSaveData.wizardUpgrades[wizardKey] = currentSaveData.wizardUpgrades[wizardKey] || { hp: 0, damage: 0, speed: 0 };
+  currentSaveData.wizardUpgrades[wizardKey] = currentSaveData.wizardUpgrades[wizardKey] || { hp: 0, damage: 0, speed: 0, energy: 0 };
   
   const currentLvl = currentSaveData.wizardUpgrades[wizardKey][statType] || 0;
   if (currentLvl >= 5) {
@@ -1471,6 +1706,7 @@ window.upgradeWizardStat = (wizardKey, statType) => {
   if (statType === 'hp') cost = 500 * (currentLvl + 1);
   else if (statType === 'damage') cost = 600 * (currentLvl + 1);
   else if (statType === 'speed') cost = 400 * (currentLvl + 1);
+  else if (statType === 'energy') cost = 300 * (currentLvl + 1);
   
   if (currentSaveData.gold < cost) {
     alert('Không đủ tiền vàng!');
@@ -1573,10 +1809,11 @@ function updateCharacterDetails(key) {
 
   // ĐÃ SỞ HỮU -> GIAO DIỆN NÂNG CẤP CHI TIẾT
   const wizardUpgrades = currentSaveData.wizardUpgrades || {};
-  const charUpgrades = wizardUpgrades[key] || { hp: 0, damage: 0, speed: 0 };
+  const charUpgrades = wizardUpgrades[key] || { hp: 0, damage: 0, speed: 0, energy: 0 };
   const lvlHp = charUpgrades.hp || 0;
   const lvlDmg = charUpgrades.damage || 0;
   const lvlSpd = charUpgrades.speed || 0;
+  const lvlEnergy = charUpgrades.energy || 0;
 
   const spellUpgrades = currentSaveData.spellUpgrades || {};
   const charSpellUpgrades = spellUpgrades[key] || [0, 0, 0, 0];
@@ -1584,14 +1821,17 @@ function updateCharacterDetails(key) {
   const currentMaxHp = char.stats.maxHp + lvlHp * 10;
   const currentSpeed = (char.stats.speed + lvlSpd * 0.15).toFixed(2);
   const currentDamage = (char.stats.damageModifier + lvlDmg * 0.10).toFixed(2);
+  const currentMaxEnergy = 100 + lvlEnergy * 20;
 
   const costHp = 500 * (lvlHp + 1);
   const costDmg = 600 * (lvlDmg + 1);
   const costSpd = 400 * (lvlSpd + 1);
+  const costEnergy = 300 * (lvlEnergy + 1);
 
   const btnHp = lvlHp >= 5 ? '<span style="color:var(--neon-cyan); font-weight:bold;">MAX 👑</span>' : `<button class="btn" style="padding: 0.2rem 0.5rem; font-size: 0.68rem; border-color: var(--neon-cyan); background: rgba(0, 243, 255, 0.05);" onclick="window.upgradeWizardStat('${key}', 'hp')">NÂNG: ${costHp} 🪙</button>`;
   const btnDmg = lvlDmg >= 5 ? '<span style="color:var(--neon-cyan); font-weight:bold;">MAX 👑</span>' : `<button class="btn" style="padding: 0.2rem 0.5rem; font-size: 0.68rem; border-color: var(--neon-cyan); background: rgba(0, 243, 255, 0.05);" onclick="window.upgradeWizardStat('${key}', 'damage')">NÂNG: ${costDmg} 🪙</button>`;
   const btnSpd = lvlSpd >= 5 ? '<span style="color:var(--neon-cyan); font-weight:bold;">MAX 👑</span>' : `<button class="btn" style="padding: 0.2rem 0.5rem; font-size: 0.68rem; border-color: var(--neon-cyan); background: rgba(0, 243, 255, 0.05);" onclick="window.upgradeWizardStat('${key}', 'speed')">NÂNG: ${costSpd} 🪙</button>`;
+  const btnEnergy = lvlEnergy >= 5 ? '<span style="color:var(--neon-cyan); font-weight:bold;">MAX 👑</span>' : `<button class="btn" style="padding: 0.2rem 0.5rem; font-size: 0.68rem; border-color: var(--neon-cyan); background: rgba(0, 243, 255, 0.05);" onclick="window.upgradeWizardStat('${key}', 'energy')">NÂNG: ${costEnergy} 🪙</button>`;
 
   const statsUpgradeColHtml = `
     <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 0.75rem;">
@@ -1620,6 +1860,14 @@ function updateCharacterDetails(key) {
             <div style="font-size: 0.65rem; color: #a8b2db;">Cấp ${lvlSpd}/5 (+0.15 tốc chạy/cấp)</div>
           </div>
           <div>${btnSpd}</div>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.72rem;">
+          <div>
+            <span style="color:#fff; font-weight:bold;">Năng Lượng (Energy):</span>
+            <span style="color:#00ff7f; margin-left: 0.25rem;">${currentMaxEnergy} EP</span>
+            <div style="font-size: 0.65rem; color: #a8b2db;">Cấp ${lvlEnergy}/5 (+20 EP/cấp, Hồi 2 EP/s)</div>
+          </div>
+          <div>${btnEnergy}</div>
         </div>
       </div>
     </div>
@@ -1801,7 +2049,16 @@ function updateGameHUD() {
   const xpPct = Math.min(100, (gameCtx.player.xp / gameCtx.player.xpNeeded) * 100);
   hudXpBar.style.width = `${xpPct}%`;
 
-  const hpPct = Math.max(0, (gameCtx.player.hp / gameCtx.player.maxHp) * 100);
+  let hpPct;
+  if (gameCtx.player.characterKey === 'wolf' && gameCtx.player.lycanTransformActive) {
+    hpPct = Math.max(0, (gameCtx.player.wolfHp / gameCtx.player.maxWolfHp) * 100);
+    hudHealthBar.style.background = 'linear-gradient(90deg, #ff3300, #ff003c)'; // Đỏ lửa cho sói
+    hudHealthBar.style.boxShadow = '0 0 10px rgba(255, 0, 60, 0.6)';
+  } else {
+    hpPct = Math.max(0, (gameCtx.player.hp / gameCtx.player.maxHp) * 100);
+    hudHealthBar.style.background = ''; // Mặc định
+    hudHealthBar.style.boxShadow = '';
+  }
   hudHealthBar.style.width = `${hpPct}%`;
 
   // Cập nhật tài nguyên HUD
@@ -1810,12 +2067,33 @@ function updateGameHUD() {
   if (document.getElementById('hud-iron')) document.getElementById('hud-iron').innerText = gameCtx.player.iron || 0;
   if (document.getElementById('hud-gold-ore')) document.getElementById('hud-gold-ore').innerText = gameCtx.player.gold_ore || 0;
   if (document.getElementById('hud-diamond-ore')) document.getElementById('hud-diamond-ore').innerText = gameCtx.player.diamond_ore || 0;
+  if (document.getElementById('hud-herb-red')) document.getElementById('hud-herb-red').innerText = gameCtx.player.herb_red || 0;
+  if (document.getElementById('hud-herb-blue')) document.getElementById('hud-herb-blue').innerText = gameCtx.player.herb_blue || 0;
+  if (document.getElementById('hud-herb-yellow')) document.getElementById('hud-herb-yellow').innerText = gameCtx.player.herb_yellow || 0;
+  if (document.getElementById('hud-potion-health')) document.getElementById('hud-potion-health').innerText = gameCtx.player.potion_health || 0;
+  if (document.getElementById('hud-potion-energy')) document.getElementById('hud-potion-energy').innerText = gameCtx.player.potion_energy || 0;
+  if (document.getElementById('hud-potion-speed')) document.getElementById('hud-potion-speed').innerText = gameCtx.player.potion_speed || 0;
 
   // Cập nhật thanh đói bụng nếu có (Hunger)
   const hungerInner = document.getElementById('hud-hunger-bar');
   if (hungerInner) {
     const hungerPct = Math.max(0, gameCtx.player.hunger || 0);
     hungerInner.style.width = `${hungerPct}%`;
+  }
+
+  // Cập nhật thanh năng lượng (Energy)
+  const energyInner = document.getElementById('hud-energy-bar');
+  const energyText = document.getElementById('hud-energy-text');
+  if (energyInner && gameCtx.player) {
+    const epPct = Math.max(0, (gameCtx.player.energy / gameCtx.player.maxEnergy) * 100);
+    energyInner.style.width = `${epPct}%`;
+    if (energyText) {
+      energyText.innerText = `${Math.round(gameCtx.player.energy)}/${gameCtx.player.maxEnergy}`;
+    }
+  }
+
+  if (typeof window.updateBuildHUD === 'function') {
+    window.updateBuildHUD();
   }
 
   gameCtx.player.updateHUD();
@@ -2029,16 +2307,20 @@ const CRAFT_RECIPES = {
   rifle: { wood: 0, stone: 0, iron: 25, gold_ore: 10, diamond_ore: 2 },
   shotgun: { wood: 0, stone: 0, iron: 20, gold_ore: 8, diamond_ore: 4 },
   power_drill: { wood: 15, stone: 0, iron: 15, gold_ore: 6, diamond_ore: 0 },
-  magnet_glove: { wood: 0, stone: 0, iron: 10, gold_ore: 5, diamond_ore: 5 }
+  magnet_glove: { wood: 0, stone: 0, iron: 10, gold_ore: 5, diamond_ore: 5 },
+  auto_miner: { wood: 0, stone: 20, iron: 15, gold_ore: 10, diamond_ore: 2 },
+  alchemy_table: { wood: 15, stone: 10, iron: 5, gold_ore: 0, diamond_ore: 0 }
 };
 window.CRAFT_RECIPES = CRAFT_RECIPES;
 
 function isNearCraftingTable2() {
-  if (!gameCtx.player || !gameCtx.obstacles) return false;
+  if (!gameCtx.player) return false;
+  if (gameCtx.player.hasCraftingTable2Unlocked) return true;
+  if (!gameCtx.obstacles) return false;
   for (const obs of gameCtx.obstacles) {
     if (obs.active && obs.type === 'crafting_table_2') {
-      const dist = Math.hypot(gameCtx.player.x - obs.x, gameCtx.player.y - obs.y);
-      if (dist < 120) return true;
+      gameCtx.player.hasCraftingTable2Unlocked = true;
+      return true;
     }
   }
   return false;
@@ -2049,6 +2331,37 @@ function handleInteraction() {
   if (!gameCtx.player || gameCtx.gameState !== 'PLAYING') return;
 
   const p = gameCtx.player;
+
+  // Check if near an alchemy table first
+  let nearestTable = null;
+  let minTDist = Infinity;
+  if (gameCtx.obstacles) {
+    for (const obs of gameCtx.obstacles) {
+      if (obs.active && obs.type === 'alchemy_table') {
+        const dist = Math.hypot(p.x - obs.x, p.y - obs.y);
+        if (dist < minTDist) {
+          minTDist = dist;
+          nearestTable = obs;
+        }
+      }
+    }
+  }
+
+  if (nearestTable && minTDist < 75) {
+    const alchemyOverlay = document.getElementById('alchemy-overlay');
+    if (alchemyOverlay) {
+      if (alchemyOverlay.style.display === 'none') {
+        alchemyOverlay.style.display = 'flex';
+        const craftOverlay = document.getElementById('crafting-overlay');
+        if (craftOverlay) craftOverlay.style.display = 'none';
+        updateAlchemyMenu();
+      } else {
+        alchemyOverlay.style.display = 'none';
+      }
+    }
+    return;
+  }
+
   if (!gameCtx.inCave) {
     // Look for nearest CaveEntrance
     let nearestEntrance = null;
@@ -2216,7 +2529,7 @@ function tryPlaceStructure(type) {
   const recipe = CRAFT_RECIPES[type];
   if (!recipe) return;
   
-  const isAdvanced = ['flame_turret', 'tesla_turret', 'electric_fence', 'elemental_bomb', 'handgun', 'rifle', 'shotgun', 'power_drill', 'magnet_glove'].includes(type);
+  const isAdvanced = ['flame_turret', 'tesla_turret', 'electric_fence', 'elemental_bomb', 'handgun', 'rifle', 'shotgun', 'power_drill', 'magnet_glove', 'auto_miner'].includes(type);
   if (isAdvanced && !isNearCraftingTable2()) {
     if (window.FloatingText && gameCtx.floatingTexts) {
       gameCtx.floatingTexts.push(new FloatingText(gameCtx.player.x, gameCtx.player.y - 30, "CẦN ĐỨNG GẦN BÀN CHẾ TẠO 2!", "#ff0055"));
@@ -2293,20 +2606,6 @@ function tryPlaceStructure(type) {
     return;
   }
   
-  // Đặt công trình tại vị trí chuột
-  const wx = mouse.x;
-  const wy = mouse.y;
-
-  // Kiểm tra va chạm chồng chéo trước khi trừ tài nguyên
-  const tempObs = new Obstacle(wx, wy, type);
-  const check = canPlaceStructureAt(wx, wy, tempObs.size);
-  if (!check.valid) {
-    if (window.FloatingText && gameCtx.floatingTexts) {
-      gameCtx.floatingTexts.push(new FloatingText(p.x, p.y - 30, check.message, "#ff0055"));
-    }
-    return;
-  }
-  
   // Khấu trừ tài nguyên
   p.wood = wood - (recipe.wood || 0);
   p.stone = stone - (recipe.stone || 0);
@@ -2314,8 +2613,21 @@ function tryPlaceStructure(type) {
   p.gold_ore = gold_ore - (recipe.gold_ore || 0);
   p.diamond_ore = diamond_ore - (recipe.diamond_ore || 0);
   
-  const newObs = new Obstacle(wx, wy, type);
-  gameCtx.obstacles.push(newObs);
+  // Cộng dồn vào túi đồ chế tạo thay vì đặt ngay
+  p.structureInventory[type] = (p.structureInventory[type] || 0) + 1;
+  
+  if (type === 'crafting_table_2') {
+    p.hasCraftingTable2Unlocked = true;
+    if (window.FloatingText && gameCtx.floatingTexts) {
+      gameCtx.floatingTexts.push(new FloatingText(p.x, p.y - 55, "ĐÃ HỢP NHẤT BÀN CHẾ TẠO 2 VÀO NGƯỜI CHƠI!", "#ffe600"));
+      gameCtx.floatingTexts.push(new FloatingText(p.x, p.y - 75, "CHẾ TẠO NÂNG CAO MỌI NƠI!", "#00ffff"));
+    }
+  }
+  
+  const structName = BUILD_ITEMS_DATA[type] ? BUILD_ITEMS_DATA[type].name : type.toUpperCase();
+  if (window.FloatingText && gameCtx.floatingTexts) {
+    gameCtx.floatingTexts.push(new FloatingText(p.x, p.y - 30, `ĐÃ CHẾ TẠO: +1 ${structName}!`, "#00ff7f"));
+  }
   
   // Tạo hiệu ứng hạt và âm thanh
   if (soundManager.playSpell) {
@@ -2323,23 +2635,13 @@ function tryPlaceStructure(type) {
   }
   
   for (let i = 0; i < 12; i++) {
-    particleManager.addParticle(wx, wy, newObs.color, Math.random() * 2.5 + 1, Math.random() * 2 + 1, Math.random() * Math.PI * 2, 0.05);
+    particleManager.addParticle(p.x, p.y, '#00ff7f', Math.random() * 2.5 + 1, Math.random() * 2 + 1, Math.random() * Math.PI * 2, 0.05);
   }
   
-  // Ẩn menu chế tạo và xóa trạng thái chọn
-  const overlay = document.getElementById('crafting-overlay');
-  if (overlay) {
-    overlay.style.display = 'none';
-    const selected = overlay.querySelector('.craft-item.selected');
-    if (selected) {
-      selected.classList.remove('selected');
-      selected.style.backgroundColor = 'rgba(255, 255, 255, 0.02)';
-      selected.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-    }
-  }
-  
-  // Cập nhật lại giao diện HUD
+  // Cập nhật lại giao diện HUD & Bảng chế tạo
+  updateCraftingMenu();
   updateGameHUD();
+  if (typeof window.updateBuildHUD === 'function') window.updateBuildHUD();
 }
 window.tryPlaceStructure = tryPlaceStructure;
 
@@ -2362,7 +2664,7 @@ function updateCraftingMenu() {
     const recipe = CRAFT_RECIPES[type];
     if (!recipe) return;
     
-    const isAdvanced = ['flame_turret', 'tesla_turret', 'electric_fence', 'elemental_bomb', 'handgun', 'rifle', 'shotgun', 'power_drill', 'magnet_glove'].includes(type);
+    const isAdvanced = ['flame_turret', 'tesla_turret', 'electric_fence', 'elemental_bomb', 'handgun', 'rifle', 'shotgun', 'power_drill', 'magnet_glove', 'auto_miner'].includes(type);
     const needTable2Warning = isAdvanced && !nearTable2;
     
     const canAfford = wood >= (recipe.wood || 0) && 
@@ -2402,45 +2704,7 @@ function setupCrafting() {
     });
     item.addEventListener('click', (e) => {
       const type = item.getAttribute('data-type');
-      const recipe = CRAFT_RECIPES[type];
-      if (!recipe || !gameCtx.player) return;
-      
-      const isAdvanced = ['flame_turret', 'tesla_turret', 'electric_fence', 'elemental_bomb', 'handgun', 'rifle', 'shotgun', 'power_drill', 'magnet_glove'].includes(type);
-      if (isAdvanced && !isNearCraftingTable2()) {
-        if (window.FloatingText && gameCtx.floatingTexts) {
-          gameCtx.floatingTexts.push(new FloatingText(gameCtx.player.x, gameCtx.player.y - 30, "CẦN ĐỨNG GẦN BÀN CHẾ TẠO 2!", "#ff0055"));
-        }
-        e.stopPropagation();
-        return;
-      }
-      
-      const p = gameCtx.player;
-      const wood = p.wood || 0;
-      const stone = p.stone || 0;
-      const iron = p.iron || 0;
-      const gold_ore = p.gold_ore || 0;
-      const diamond_ore = p.diamond_ore || 0;
-      
-      if (wood < (recipe.wood || 0) || stone < (recipe.stone || 0) || iron < (recipe.iron || 0) || gold_ore < (recipe.gold_ore || 0) || diamond_ore < (recipe.diamond_ore || 0)) {
-        if (window.FloatingText && gameCtx.floatingTexts) {
-          gameCtx.floatingTexts.push(new FloatingText(p.x, p.y - 30, "KHÔNG ĐỦ TÀI NGUYÊN!", "#ff0055"));
-        }
-        e.stopPropagation();
-        return;
-      }
-
-      const isSelected = item.classList.contains('selected');
-      items.forEach(i => {
-        i.classList.remove('selected');
-        i.style.backgroundColor = 'rgba(255, 255, 255, 0.02)';
-        i.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-      });
-      
-      if (!isSelected) {
-        item.classList.add('selected');
-        item.style.backgroundColor = 'rgba(0, 243, 255, 0.08)';
-        item.style.borderColor = 'var(--neon-cyan)';
-      }
+      tryPlaceStructure(type);
       e.stopPropagation();
     });
   });
@@ -2501,3 +2765,101 @@ window.promptSyncCode = async () => {
     alert("Mã đồng bộ không hợp lệ! Mã phải có dạng 'dev_xxxx'.");
   }
 };
+
+function updateAlchemyMenu() {
+  const overlay = document.getElementById('alchemy-overlay');
+  if (!overlay || !gameCtx.player) return;
+
+  const p = gameCtx.player;
+  const red = p.herb_red || 0;
+  const blue = p.herb_blue || 0;
+  const yellow = p.herb_yellow || 0;
+
+  const items = overlay.querySelectorAll('.alchemy-item');
+  items.forEach(item => {
+    const potionType = item.getAttribute('data-potion');
+    let canCraft = false;
+
+    if (potionType === 'potion_health') {
+      canCraft = red >= 2;
+    } else if (potionType === 'potion_energy') {
+      canCraft = blue >= 2;
+    } else if (potionType === 'potion_speed') {
+      canCraft = red >= 1 && yellow >= 1;
+    }
+
+    if (canCraft) {
+      item.style.opacity = '1';
+      item.style.cursor = 'pointer';
+      item.style.borderColor = 'rgba(204,51,255,0.6)';
+      item.style.background = 'rgba(204,51,255,0.08)';
+    } else {
+      item.style.opacity = '0.4';
+      item.style.cursor = 'not-allowed';
+      item.style.borderColor = 'rgba(255,255,255,0.1)';
+      item.style.background = 'rgba(255,255,255,0.02)';
+    }
+  });
+}
+window.updateAlchemyMenu = updateAlchemyMenu;
+
+function setupAlchemyEventListeners() {
+  const overlay = document.getElementById('alchemy-overlay');
+  if (!overlay) return;
+
+  overlay.addEventListener('click', (e) => {
+    const item = e.target.closest('.alchemy-item');
+    if (!item) return;
+
+    const potionType = item.getAttribute('data-potion');
+    const p = gameCtx.player;
+    if (!p) return;
+
+    let success = false;
+    let costMsg = "";
+
+    if (potionType === 'potion_health') {
+      if (p.herb_red >= 2) {
+        p.herb_red -= 2;
+        p.potion_health = (p.potion_health || 0) + 1;
+        success = true;
+      } else {
+        costMsg = "THIẾU THẢO DƯỢC ĐỎ!";
+      }
+    } else if (potionType === 'potion_energy') {
+      if (p.herb_blue >= 2) {
+        p.herb_blue -= 2;
+        p.potion_energy = (p.potion_energy || 0) + 1;
+        success = true;
+      } else {
+        costMsg = "THIẾU THẢO DƯỢC LAM!";
+      }
+    } else if (potionType === 'potion_speed') {
+      if (p.herb_red >= 1 && p.herb_yellow >= 1) {
+        p.herb_red -= 1;
+        p.herb_yellow -= 1;
+        p.potion_speed = (p.potion_speed || 0) + 1;
+        success = true;
+      } else {
+        costMsg = "THIẾU THẢO DƯỢC!";
+      }
+    }
+
+    if (success) {
+      if (soundManager.playCraftSuccess) {
+        soundManager.playCraftSuccess();
+      }
+      if (window.FloatingText && gameCtx.floatingTexts) {
+        gameCtx.floatingTexts.push(new FloatingText(p.x, p.y - 30, "CHẾ THÀNH CÔNG! 🧪", "#cc66ff"));
+      }
+      updateAlchemyMenu();
+      p.updateHUD();
+    } else {
+      if (window.FloatingText && gameCtx.floatingTexts) {
+        gameCtx.floatingTexts.push(new FloatingText(p.x, p.y - 30, costMsg, "#ff0055"));
+      }
+    }
+  });
+}
+
+setTimeout(setupAlchemyEventListeners, 150);
